@@ -56,7 +56,7 @@ _install_electron() {
     ELECTRON_VERSION="$(pnpm info electron version)"
   else
     ELECTRON_OS="win32"
-    ELECTRON_VERSION="$(${PREFIX}/Library/bin/pnpm.bat info electron version)"
+    ELECTRON_VERSION="$(${BUILD_PREFIX}/Library/bin/pnpm.bat info electron version)"
   fi
 
   ELECTRON_ARCH="x64"
