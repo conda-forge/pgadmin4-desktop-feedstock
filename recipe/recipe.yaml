@@ -1,7 +1,6 @@
 context:
   name: pgadmin4-desktop
   version: "9.3"
-  python_min: "3.9"
   yarn_version: "3.8.7"
 
 package:
@@ -21,7 +20,7 @@ source:
   #   target_directory: yarn-dist-${{ yarn_version }}
 
 build:
-  number: 0
+  number: 1
   dynamic_linking:
     binary_relocation: ${{ false if osx else true }}
 
@@ -29,12 +28,17 @@ requirements:
   build:
     - ${{ compiler("c") }}
     - ${{ stdlib("c") }}
-  host:
     - curl
-    - libvulkan-loader
-    - pgadmin4-python ==${{ version }}
     - pnpm
     - yarn ==${{ yarn_version }}
+    - if: unix
+      then:
+        - sed
+        - syft
+        - unzip
+  host:
+    - libvulkan-loader
+    - pgadmin4-python ==${{ version }}
     - if: linux
       then:
         - ${{ cdt("mesa-libgbm") }}
@@ -54,9 +58,6 @@ requirements:
         - gtk3
         - mesalib
         - pango
-        - sed
-        - syft
-        - unzip
         - xorg-libx11
         - xorg-libxcomposite
         - xorg-libxext
@@ -139,6 +140,7 @@ tests:
     requirements:
       run:
         - ${{ cdt("xorg-x11-server-xvfb") }}
+        - python
 
 about:
   homepage: https://github.com/pgadmin-org/pgadmin4

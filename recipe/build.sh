@@ -2,9 +2,9 @@
 set -eux
 
 if [[ "${OSTYPE}" == "linux"* ]] || [[ "${OSTYPE}" == "darwin"* ]]; then
-  export PG_YARN=${PREFIX}/bin/yarn
+  export PG_YARN=${BUILD_PREFIX}/bin/yarn
 else
-  export PG_YARN=${PREFIX}/Library/bin/yarn
+  export PG_YARN=${BUILD_PREFIX}/Library/bin/yarn
 fi
 
 source "${RECIPE_DIR}"/building/build-functions.sh

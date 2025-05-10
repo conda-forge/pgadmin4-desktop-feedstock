@@ -22,8 +22,6 @@ _setup_env() {
       APP_LONG_VERSION="${APP_LONG_VERSION}-${APP_SUFFIX}"
   fi
 
-  PYTHON_BINARY=$("${PYTHON}" -c "import sys; print('python%d.%.d' % (sys.version_info.major, sys.version_info.minor))")
-
   SHAREROOT="${DESKTOPROOT}"/share/"${APP_NAME}"
   BUNDLEDIR="${DESKTOPROOT}"/usr/"${APP_NAME}"/bin
   if [[ "${OSTYPE}" == "darwin"* ]]; then
@@ -52,7 +50,6 @@ _setup_dirs() {
 }
 
 _install_electron() {
-  set +x
   echo "Installing Electron..."
   if [[ "${OSTYPE}" == "linux"* ]] || [[ "${OSTYPE}" == "darwin"* ]]; then
     ELECTRON_OS="$(uname | tr '[:upper:]' '[:lower:]')"
@@ -171,9 +168,9 @@ _install_bundle() {
   if [[ "${OSTYPE}" == "darwin"* ]]; then
     _install_osx_bundle
   else
-    RELATIVE_PYTHON_PATH=$(python -c "import os; print(os.path.relpath('${PREFIX}/bin/python', '${PREFIX}/usr/${APP_NAME}/bin/resources/app/src/js'))")
-    RELATIVE_PGADMIN_FILE=$(python -c "import os; print(os.path.relpath('${PREFIX}/lib/${PYTHON_BINARY}/site-packages/${APP_NAME}/pgAdmin4.py', '${PREFIX}/usr/${APP_NAME}/bin/resources/app/src/js'))")
-
+    PYTHON_BINARY=$(find "${PREFIX}/lib" -name pgAdmin4.py | grep -o "python[0-9]\.[0-9]*" | head -1)
+    RELATIVE_PYTHON_PATH="../../../../../../bin/python"
+    RELATIVE_PGADMIN_FILE="../../../../../../lib/${PYTHON_BINARY}/site-packages/${APP_NAME}/pgAdmin4.py"
     mkdir -p "${BUNDLEDIR}"/resources/app/src/js
     cat << EOF > "${BUNDLEDIR}/resources/app/src/js/dev_config.json"
 {
