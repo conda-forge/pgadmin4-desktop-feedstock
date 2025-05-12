@@ -151,15 +151,15 @@ _install_osx_bundle() {
       fi
     done
 
-    # Rename Electron Framework to pgAdmin 4 Framework
-    framework_path="${BUNDLEDIR}/Contents/Frameworks/Electron Framework.framework"
-    if [[ -d "${framework_path}" ]]; then
-      mv "${framework_path}/Versions/Current/Electron Framework" "${framework_path}/Versions/Current/pgAdmin 4 Framework"
-      mv "${framework_path}/Electron Framework" "${framework_path}/pgAdmin 4 Framework"
-      mv "${framework_path}" "${BUNDLEDIR}/Contents/Frameworks/pgAdmin 4 Framework.framework"
-    else
-      echo "Warning: Missing Electron Framework"
-    fi
+    # # Rename Electron Framework to pgAdmin 4 Framework
+    # framework_path="${BUNDLEDIR}/Contents/Frameworks/Electron Framework.framework"
+    # if [[ -d "${framework_path}" ]]; then
+    #   mv "${framework_path}/Versions/Current/Electron Framework" "${framework_path}/Versions/Current/pgAdmin 4 Framework"
+    #   mv "${framework_path}/Electron Framework" "${framework_path}/pgAdmin 4 Framework"
+    #   mv "${framework_path}" "${BUNDLEDIR}/Contents/Frameworks/pgAdmin 4 Framework.framework"
+    # else
+    #   echo "Warning: Missing Electron Framework"
+    # fi
 
     # PkgInfo
     echo APPLPGA4 > "${BUNDLEDIR}"/Contents/PkgInfo

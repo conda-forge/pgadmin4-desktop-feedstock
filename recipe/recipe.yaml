@@ -31,6 +31,9 @@ requirements:
     - curl
     - pnpm
     - yarn ==${{ yarn_version }}
+    - if: linux and (build_platform != target_platform)
+      then:
+        - nss
     - if: unix
       then:
         - sed
@@ -114,11 +117,11 @@ tests:
             - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Helper (Plugin).app/Contents/Info.plist
             - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Helper (Renderer).app/Contents/Info.plist
             - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Helper.app/Contents/Info.plist
-            - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Framework.framework/pgAdmin 4 Framework
-            - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Framework.framework/Resources/Info.plist
-            - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Framework.framework/Versions/A/Resources/Info.plist
-            - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Framework.framework/Versions/Current/pgAdmin 4 Framework
-            - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Framework.framework/Versions/Current/Resources/Info.plist
+            - usr/pgadmin4.app/Contents/Frameworks/Electron Framework.framework/Electron Framework
+            - usr/pgadmin4.app/Contents/Frameworks/Electron Framework.framework/Resources/Info.plist
+            - usr/pgadmin4.app/Contents/Frameworks/Electron Framework.framework/Versions/A/Resources/Info.plist
+            - usr/pgadmin4.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Electron Framework
+            - usr/pgadmin4.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Resources/Info.plist
             - usr/pgadmin4.app/Contents/Resources/app/assets/pgAdmin4.png
             - usr/pgadmin4.app/Contents/Resources/pgAdmin4.icns
             - usr/pgadmin4.app/Contents/Resources/web/pgAdmin4.py
@@ -142,7 +145,7 @@ tests:
           - if: linux and ppc64le
             then:
               - ls -l ${PREFIX}/lib/libnss3.*
-              - ldd ${PREFIX}/lib/libnss3.so
+              - nm -D ${PREFIX}/lib/libnss3.so | grep -v " U " | head -10
               - export LD_PRELOAD=${PREFIX}/lib/libnss3.so
           - if: linux
             then: cd testing && export DISPLAY=localhost:1.0 && python run_pgadmin4.py
