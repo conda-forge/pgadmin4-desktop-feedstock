@@ -149,7 +149,7 @@ tests:
               - file ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
               - otool -hv ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
         else:
-          - echo Skip
+          - echo Skip non-unix
           # then: %PREFIX%\Library\usr\pgadmin4\bin\pgadmin4.exe
     files:
       recipe:
