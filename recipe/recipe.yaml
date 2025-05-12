@@ -129,7 +129,7 @@ tests:
       - if: osx
         then: ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
       - if: not unix
-        then: ${PREFIX}\Library\usr\pgadmin4\bin\pgadmin4.exe
+        then: %PREFIX%\Library\usr\pgadmin4\bin\pgadmin4.exe
     files:
       recipe:
         - testing/

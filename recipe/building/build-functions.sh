@@ -84,6 +84,8 @@ _install_electron() {
     ln -sf "${PREFIX}/lib/libGLESv2.so.2" "${BUNDLEDIR}/libGLESv2.so"
     ln -sf "${PREFIX}/lib/libEGL.so.1" "${BUNDLEDIR}/libEGL.so"
     ln -sf "${PREFIX}/lib/libvulkan.so" "${BUNDLEDIR}/libvulkan.so"
+    # PPC64LE doesn't seem to load libnss3.so at runtime
+    ln -sf "${PREFIX}/lib/libnss3.so" "${BUNDLEDIR}/libnss3.so"
   fi
 
   if [[ "${OSTYPE}" == "linux"* ]]; then
@@ -133,15 +135,20 @@ _install_osx_bundle() {
     for helper_exec in "Electron Helper" "Electron Helper (Renderer)" "Electron Helper (Plugin)" "Electron Helper (GPU)"
     do
       pgadmin_exec=${helper_exec//Electron/pgAdmin 4}
-      mv "${BUNDLEDIR}/Contents/Frameworks/${helper_exec}.app/Contents/MacOS/${helper_exec}" "${BUNDLEDIR}/Contents/Frameworks/${helper_exec}.app/Contents/MacOS/${pgadmin_exec}"
-      mv "${BUNDLEDIR}/Contents/Frameworks/${helper_exec}.app" "${BUNDLEDIR}/Contents/Frameworks/${pgadmin_exec}.app"
+      helper_path="${BUNDLEDIR}/Contents/Frameworks/${helper_exec}.app"
+      if [[ -d "${helper_path}" ]]; then
+        mv "${helper_path}/Contents/MacOS/${helper_exec}" "${helper_path}/Contents/MacOS/${pgadmin_exec}"
+        mv "${helper_path}" "${BUNDLEDIR}/Contents/Frameworks/${pgadmin_exec}.app"
 
-      mkdir -p "${BUNDLEDIR}/Contents/Frameworks/${pgadmin_exec}.app/Contents"
-      info_plist="${BUNDLEDIR}/Contents/Frameworks/${pgadmin_exec}.app/Contents/Info.plist"
-      cp Info.plist-helper.in "${info_plist}"
-      sed -i "s/%APPNAME%/${pgadmin_exec}/g" "${info_plist}"
-      sed -i "s/%APPVER%/${APP_LONG_VERSION}/g" "${info_plist}"
-      sed -i "s/%APPID%/org.pgadmin.pgadmin4.helper/g" "${info_plist}"
+        # Update the Info.plist for the helper app
+        info_plist="${BUNDLEDIR}/Contents/Frameworks/${pgadmin_exec}.app/Contents/Info.plist"
+        cp Info.plist-helper.in "${info_plist}"
+        sed -i "s/%APPNAME%/${pgadmin_exec}/g" "${info_plist}"
+        sed -i "s/%APPVER%/${APP_LONG_VERSION}/g" "${info_plist}"
+        sed -i "s/%APPID%/org.pgadmin.pgadmin4.helper/g" "${info_plist}"
+      else
+        echo "Warning: Missing helper app: ${helper_exec}"
+      fi
     done
 
     # PkgInfo
@@ -153,11 +160,11 @@ _install_osx_bundle() {
     # Rename the app in package.json so the menu looks as it should
     sed -i "s/\"name\": \"pgadmin4\"/\"name\": \"${APP_NAME}\"/g" "${BUNDLEDIR}"/Contents/Resources/app/package.json
 
-    # copy the web directory to the bundle as it is required by runtime
+    # Link the web directory to the bundle as it is required by runtime
     PY_PGADMIN=$(find "${PREFIX}"/lib/python3*/site-packages -type d -name "${APP_NAME}")
     ln -s "${PY_PGADMIN}" "${BUNDLEDIR}"/Contents/Resources/web
 
-    # Update permissions to make sure all users can access installed pgadmin.
+    # Update permissions to make sure all users can access installed pgadmin
     chmod -R og=u "${BUNDLEDIR}"
     chmod -R og-w "${BUNDLEDIR}"
   popd || exit
