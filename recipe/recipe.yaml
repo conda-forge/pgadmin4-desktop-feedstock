@@ -120,7 +120,7 @@ tests:
             - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Framework.framework/Versions/Current/pgAdmin 4 Framework
             - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Framework.framework/Versions/Current/Resources/Info.plist
             - usr/pgadmin4.app/Contents/Resources/app/assets/pgAdmin4.png
-            - usr/pgadmin4.app/Contents/Resources/pgadmin4.icns
+            - usr/pgadmin4.app/Contents/Resources/pgAdmin4.icns
             - usr/pgadmin4.app/Contents/Resources/web/pgAdmin4.py
           else:
             - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/assets/*
@@ -141,9 +141,9 @@ tests:
         then:
           - if: linux and ppc64le
             then:
-              - export LD_PRELOAD=${PREFIX}/lib/libnss3.so
               - ls -l ${PREFIX}/lib/libnss3.*
               - ldd ${PREFIX}/lib/libnss3.so
+              - export LD_PRELOAD=${PREFIX}/lib/libnss3.so
           - if: linux
             then: cd testing && export DISPLAY=localhost:1.0 && python run_pgadmin4.py
           - if: osx and x86_64
