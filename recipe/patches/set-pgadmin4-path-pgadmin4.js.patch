@@ -11,5 +11,5 @@
 +  try {
 +    const configFileContent = fs.readFileSync(configFilePath, 'utf8'); // Specify encoding
 +    let dev_config = JSON.parse(configFileContent);
-+    pythonPath = path.resolve(__dirname, dev_config['pythonPath']);
-+    pgadminFile = path.resolve(__dirname, dev_config['pgadminFile']);
++    pythonPath = path.resolve(__dirname, process.env['PGADMIN4_PY_EXEC'] || dev_config['pythonPath']);
++    pgadminFile = path.resolve(__dirname, process.env['PGADMIN4_PY_HOME'] || dev_config['pgadminFile']);

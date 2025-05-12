@@ -1,13 +1,18 @@
 import argparse
 import os
+import shutil
 import subprocess
+import tempfile
 import threading
 import time
+import logging
 
 import psutil
 
 from pgadmin_test_utils import setup_signal_handler, setup_timeout
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Parse command-line arguments
 def parse_args():
@@ -24,46 +29,97 @@ setup_signal_handler()
 # Global variable to store the process reference
 process = None
 
+def setup_environment():
+    """Configure environment variables needed for pgAdmin4"""
+    # Use a shorter temporary directory path to avoid "Socket name too long" errors
+    temp_dir = tempfile.mkdtemp(prefix="pg4_", dir="/tmp")
+    os.environ["XDG_RUNTIME_DIR"] = temp_dir
+
+    # Configure fontconfig to prevent "Cannot load default config file" error
+    os.environ["FONTCONFIG_PATH"] = os.path.join(os.environ.get("PREFIX", ""), "etc/fonts")
+
+    # Start a DBus session and set DBUS_SESSION_BUS_ADDRESS
+    dbus_socket_path = os.path.join(temp_dir, "dbus.sock")
+    dbus_daemon_cmd = [
+        "dbus-daemon",
+        "--nofork",
+        "--session",
+        f"--address=unix:path={dbus_socket_path}",
+        "--nopidfile"
+    ]
+    dbus_process = subprocess.Popen(dbus_daemon_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    os.environ["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path={dbus_socket_path}"
+
+    # logging.debug(f"Started DBus session with socket: {dbus_socket_path}")
+    # logging.debug(f"Environment variables set: XDG_RUNTIME_DIR={temp_dir}, FONTCONFIG_PATH={os.environ['FONTCONFIG_PATH']}, DBUS_SESSION_BUS_ADDRESS={os.environ['DBUS_SESSION_BUS_ADDRESS']}")
+
+    return temp_dir, dbus_process
+
 def run_pgadmin4(args):
     global process
     # Start pgAdmin4 process using xvfb-run
     prefix = os.environ.get("PREFIX", "")
     pgadmin4_executable = os.path.join(prefix, "usr/pgadmin4/bin/pgadmin4")
 
-    cmd = ["xvfb-run", pgadmin4_executable]
-    cmd.extend(["--no-sandbox"])
+    if not os.path.exists(pgadmin4_executable):
+        logging.error(f"pgAdmin4 executable not found at {pgadmin4_executable}")
+        os._exit(1)
+
+    # Add flags to disable GPU and sandbox explicitly
+    cmd = ["xvfb-run", pgadmin4_executable, "--no-sandbox", "--disable-gpu", "--disable-software-rasterizer"]
     cmd.extend(args.flags)
 
-    print(f"Running command: {' '.join(cmd)}")
+    # Log the full command being executed
+    logging.info(f"Executing command: {' '.join(cmd)}")
+    # logging.debug(f"Environment: {os.environ}")
 
     process = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
+        stderr=subprocess.PIPE,
         universal_newlines=True,
         bufsize=1
     )
 
-    try:
-        stdout, stderr = process.communicate(timeout=args.timeout)
-        print("Return Code:", process.returncode)
-        print("Output:\n", stdout)
-        if process.returncode != 0:
-            print("Error occurred during execution.")
-    except subprocess.TimeoutExpired:
-        stdout, stderr = process.communicate()
-        print("Process timed out!")
-        print("Output:\n", stdout)
+    def log_output(stream, log_func):
+        """Log output from a stream in real-time."""
+        for line in iter(stream.readline, ""):
+            log_func(line.strip())
+        stream.close()
 
-    process.wait()
+    # Log stdout and stderr in real-time
+    stdout_thread = threading.Thread(target=log_output, args=(process.stdout, logging.info))
+    stderr_thread = threading.Thread(target=log_output, args=(process.stderr, logging.error))
+    stdout_thread.start()
+    stderr_thread.start()
+
+    try:
+        stdout_thread.join(timeout=args.timeout)
+        stderr_thread.join(timeout=args.timeout)
+        process.wait(timeout=args.timeout)
+        # logging.debug(f"Process exited with return code: {process.returncode}")
+        if process.returncode != 0:
+            logging.error("pgAdmin4 process exited with an error.")
+    except subprocess.TimeoutExpired:
+        logging.error("Process timed out!")
+        process.terminate()
+        process.wait()
+    except Exception as e:
+        logging.error(f"Unexpected error while running pgAdmin4: {e}")
+    finally:
+        if process and process.poll() is None:
+            process.terminate()
+            process.wait()
 
 def is_pgadmin4_running():
     """Check if pgAdmin4.py process is running."""
+    # logging.debug("Checking if pgAdmin4 process is running...")
     for proc in psutil.process_iter(attrs=["cmdline", "pid"]):
         try:
             cmdline = proc.info.get("cmdline")
+            # logging.debug(f"pgAdmin4 process found with PID: {cmdline}")
             if cmdline is not None and any("pgAdmin4.py" in arg for arg in cmdline):
-                psutil.Process(proc.info['pid']).terminate()
+                # logging.debug(f"pgAdmin4 process found with PID: {proc.info['pid']}")
                 return True
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
@@ -75,6 +131,7 @@ def main():
     # Set a reasonable timeout
     timer = setup_timeout(args.timeout)
 
+    temp_dir, dbus_process = setup_environment()
     try:
         # Start pgAdmin4 in a separate thread
         pgadmin_thread = threading.Thread(target=run_pgadmin4, args=(args,))
@@ -83,30 +140,39 @@ def main():
 
         # Add a maximum wait time in the main thread as backup
         start_time = time.time()
-        max_wait = 30  # seconds
+        max_wait = 120  # seconds
 
         while time.time() - start_time < max_wait:
             if is_pgadmin4_running():
-                print("TEST: pgAdmin4 process detected as running")
+                logging.info("TEST: pgAdmin4 process detected as running")
                 timer.cancel()
-                print("Test completed - pgAdmin4 started successfully")
+                logging.info("Test completed - pgAdmin4 started successfully")
                 if process:
                     process.terminate()
+                dbus_process.terminate()
                 os._exit(0)
             time.sleep(1)
 
-        # If we reach here, either timeout occurred or thread ended
-        print("Maximum wait time reached - exiting with success anyway")
+        logging.warning("Maximum wait time reached - exiting with success anyway")
         timer.cancel()
         if process:
             process.terminate()
+        dbus_process.terminate()
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
         os._exit(0)
 
     except KeyboardInterrupt:
-        print("Test interrupted")
+        logging.warning("Test interrupted by user")
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        dbus_process.terminate()
         os._exit(0)
     except Exception as e:
-        print(f"Error: {e}")
+        logging.error(f"Error: {e}")
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        dbus_process.terminate()
         os._exit(1)
 
 if __name__ == "__main__":
