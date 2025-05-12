@@ -151,6 +151,15 @@ _install_osx_bundle() {
       fi
     done
 
+    # Rename Electron Framework to pgAdmin 4 Framework
+    framework_path="${BUNDLEDIR}/Contents/Frameworks/Electron Framework.framework"
+    if [[ -d "${framework_path}" ]]; then
+      mv "${framework_path}/Electron Framework" "${framework_path}/pgAdmin 4 Framework"
+      mv "${framework_path}" "${BUNDLEDIR}/Contents/Frameworks/pgAdmin 4 Framework.framework"
+    else
+      echo "Warning: Missing Electron Framework"
+    fi
+
     # PkgInfo
     echo APPLPGA4 > "${BUNDLEDIR}"/Contents/PkgInfo
 
@@ -162,7 +171,7 @@ _install_osx_bundle() {
 
     # Link the web directory to the bundle as it is required by runtime
     PY_PGADMIN=$(find "${PREFIX}"/lib/python3*/site-packages -type d -name "${APP_NAME}")
-    ln -s "${PY_PGADMIN}" "${BUNDLEDIR}"/Contents/Resources/web
+    cp -r "${PY_PGADMIN}" "${BUNDLEDIR}"/Contents/Resources/web
 
     # Update permissions to make sure all users can access installed pgadmin
     chmod -R og=u "${BUNDLEDIR}"
