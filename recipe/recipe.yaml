@@ -125,14 +125,11 @@ tests:
             - Library/usr/pgadmin4/bin/pgadmin4.exe
   - script:
       - if: linux
-        then:
-          - cd testing && export DISPLAY=localhost:0.0
-          - python run_pgadmin4.py -f=--disable-gpu
-          - python run_pgadmin4.py -f=--use-gl=egl
-          - python run_pgadmin4.py -f=--use-vulkan=none
-          - python run_pgadmin4.py -f=--use-gl=desktop
-          - python run_pgadmin4.py -f=--use-gl=swiftshader
-        else: echo "No tests yet"
+        then: cd testing && export DISPLAY=localhost:0.0 && python run_pgadmin4.py
+      - if: osx
+        then: ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
+      - if: not unix
+        then: ${PREFIX}\Library\usr\pgadmin4\bin\pgadmin4.exe
     files:
       recipe:
         - testing/
