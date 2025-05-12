@@ -166,6 +166,7 @@ _install_osx_bundle() {
 
     # Icon
     cp pgAdmin4.icns "${BUNDLEDIR}"/Contents/Resources/app.icns
+    cp pgAdmin4.icns "${BUNDLEDIR}"/Contents/Resources/
     rm -f "${BUNDLEDIR}"/Contents/Resources/electron.icns
 
     # Rename the app in package.json so the menu looks as it should
