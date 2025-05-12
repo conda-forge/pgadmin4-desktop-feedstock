@@ -91,7 +91,6 @@ _install_electron() {
   if [[ "${OSTYPE}" == "linux"* ]]; then
     mv "${BUNDLEDIR}/electron" "${BUNDLEDIR}/${APP_NAME}"
   elif [[ "${OSTYPE}" == "darwin"* ]]; then
-    mkdir -p "${BUNDLEDIR}/Contents/MacOS"
     mv "${BUNDLEDIR}/Contents/MacOS/Electron" "${BUNDLEDIR}/Contents/MacOS/${APP_NAME}"
   else
     mv "${BUNDLEDIR}/electron.exe" "${BUNDLEDIR}/${APP_NAME}.exe"

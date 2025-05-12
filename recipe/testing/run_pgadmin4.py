@@ -171,6 +171,7 @@ def main():
         logging.warning("Maximum wait time reached - exiting with success anyway")
         timer.cancel()
         cleanup(temp_dir, dbus_process)
+        sleep(5)
         os._exit(0)
 
     except KeyboardInterrupt:
