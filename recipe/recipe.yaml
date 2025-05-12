@@ -136,14 +136,17 @@ tests:
             - Library/Menu/pgadmin4.ico
             - Library/usr/pgadmin4/bin/pgadmin4.exe
   - script:
-      - if: linux and ppc64le
-        then: LD_PRELOAD=${PREFIX}/lib/libnss3.so
-      - if: linux
-        then: cd testing && export DISPLAY=localhost:1.0 && python run_pgadmin4.py
-      - if: osx
-        then: ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
-      - echo "Skipping tests on Windows for now"
-        # then: %PREFIX%\Library\usr\pgadmin4\bin\pgadmin4.exe
+      - if: unix
+        then:
+          - if: linux and ppc64le
+            then: LD_PRELOAD=${PREFIX}/lib/libnss3.so
+          - if: linux
+            then: cd testing && export DISPLAY=localhost:1.0 && python run_pgadmin4.py
+          - if: osx
+            then: ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
+        else:
+          - echo "Skipping tests on Windows for now"
+          # then: %PREFIX%\Library\usr\pgadmin4\bin\pgadmin4.exe
     files:
       recipe:
         - testing/
