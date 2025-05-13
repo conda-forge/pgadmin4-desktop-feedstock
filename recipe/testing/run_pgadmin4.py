@@ -42,7 +42,7 @@ def setup_environment():
     os.environ["FONTCONFIG_PATH"] = os.path.join(os.environ.get("PREFIX", ""), "etc/fonts")
 
     # macOS-specific: No DBus setup required
-    if os.uname().sysname == "Darwin":
+    if os.name == "posix" and "darwin" in os.sys.platform.lower():
         logging.info("Skipping DBus setup on macOS")
         return temp_dir, None
 
@@ -94,11 +94,14 @@ def run_pgadmin4(args):
     global process
     # Start pgAdmin4 process
     prefix = os.environ.get("PREFIX", "")
-    if os.uname().sysname == "Darwin":
+    if os.name == "posix" and "darwin" in os.sys.platform.lower():
         # macOS-specific: Use the .app bundle
         pgadmin4_executable = os.path.join(prefix, "usr/pgadmin4.app/Contents/MacOS/pgadmin4")
+    elif os.name == "nt":
+        # Windows-specific: Use the .exe file
+        pgadmin4_executable = os.path.join(prefix, "usr", "pgadmin4", "pgadmin4.exe")
     else:
-        # Default executable path for Linux and other platforms
+        # Default executable path for Linux
         pgadmin4_executable = os.path.join(prefix, "usr/pgadmin4/bin/pgadmin4")
 
     if not os.path.exists(pgadmin4_executable):
@@ -110,7 +113,7 @@ def run_pgadmin4(args):
     cmd.extend(args.flags)
 
     # Check if xvfb-run is needed
-    if os.environ.get("HEADLESS", "false").lower() == "true" and os.uname().sysname != "Darwin":
+    if os.environ.get("HEADLESS", "false").lower() == "true" and os.name != "nt" and "darwin" not in os.sys.platform.lower():
         cmd = ["xvfb-run", "--auto-servernum"] + cmd
 
     # Log the full command being executed
