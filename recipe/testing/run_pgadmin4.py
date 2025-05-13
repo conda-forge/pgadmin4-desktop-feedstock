@@ -38,6 +38,11 @@ def setup_environment():
     # Configure fontconfig to prevent "Cannot load default config file" error
     os.environ["FONTCONFIG_PATH"] = os.path.join(os.environ.get("PREFIX", ""), "etc/fonts")
 
+    # macOS-specific: No DBus setup required
+    if os.uname().sysname == "Darwin":
+        logging.info("Skipping DBus setup on macOS")
+        return temp_dir, None
+
     # Start a DBus session and set DBUS_SESSION_BUS_ADDRESS
     dbus_socket_path = os.path.join(temp_dir, "dbus.sock")
     dbus_daemon_cmd = [
@@ -79,17 +84,26 @@ def cleanup(temp_dir, dbus_process):
 
 def run_pgadmin4(args):
     global process
-    # Start pgAdmin4 process using xvfb-run
+    # Start pgAdmin4 process
     prefix = os.environ.get("PREFIX", "")
-    pgadmin4_executable = os.path.join(prefix, "usr/pgadmin4/bin/pgadmin4")
+    if os.uname().sysname == "Darwin":
+        # macOS-specific: Use the .app bundle
+        pgadmin4_executable = os.path.join(prefix, "usr/pgadmin4.app/Contents/MacOS/pgadmin4")
+    else:
+        # Default executable path for Linux and other platforms
+        pgadmin4_executable = os.path.join(prefix, "usr/pgadmin4/bin/pgadmin4")
 
     if not os.path.exists(pgadmin4_executable):
         logging.error(f"pgAdmin4 executable not found at {pgadmin4_executable}")
         os._exit(1)
 
     # Add flags to disable GPU and sandbox explicitly
-    cmd = ["xvfb-run", pgadmin4_executable, "--no-sandbox", "--disable-gpu", "--disable-software-rasterizer"]
+    cmd = [pgadmin4_executable, "--no-sandbox", "--disable-gpu", "--disable-software-rasterizer"]
     cmd.extend(args.flags)
+
+    # Check if xvfb-run is needed
+    if os.environ.get("HEADLESS", "false").lower() == "true" and os.uname().sysname != "Darwin":
+        cmd = ["xvfb-run", "--auto-servernum"] + cmd
 
     # Log the full command being executed
     logging.info(f"Executing command: {' '.join(cmd)}")

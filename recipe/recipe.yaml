@@ -147,16 +147,17 @@ tests:
               - nm -D ${PREFIX}/lib/libnss3.so
               - export LD_PRELOAD=${PREFIX}/lib/libnss3.so
           - if: linux
-            then: cd testing && export DISPLAY=localhost:1.0 && python run_pgadmin4.py
+            then: cd testing && export DISPLAY=localhost:1.0 && export HEADLESS=true && python run_pgadmin4.py
           - if: osx and x86_64
             then:
-              - find ${PREFIX}/usr/pgadmin4.app -name "pgAdmin 4 Helper*" -type f
-              - chmod +x ${PREFIX}/usr/pgadmin4.app/Contents/Frameworks/pgAdmin\ 4\ Helper*/Contents/MacOS/*
-              - file ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
-              - file ${PREFIX}/usr/pgadmin4.app/Contents/Frameworks/pgAdmin\ 4\ Helper.app/Contents/MacOS/*
-              - plutil -p ${PREFIX}/usr/pgadmin4.app/Contents/Info.plist | grep CFBundleName
-              - plutil -replace CFBundleName -string "pgAdmin 4" $PREFIX/usr/pgadmin4.app/Contents/Info.plist
-              - ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
+              # - find ${PREFIX}/usr/pgadmin4.app -name "pgAdmin 4 Helper*" -type f
+              # - chmod +x ${PREFIX}/usr/pgadmin4.app/Contents/Frameworks/pgAdmin\ 4\ Helper*/Contents/MacOS/*
+              # - file ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
+              # - file ${PREFIX}/usr/pgadmin4.app/Contents/Frameworks/pgAdmin\ 4\ Helper.app/Contents/MacOS/*
+              # - plutil -p ${PREFIX}/usr/pgadmin4.app/Contents/Info.plist | grep CFBundleName
+              # - plutil -replace CFBundleName -string "pgAdmin 4" $PREFIX/usr/pgadmin4.app/Contents/Info.plist
+              # - ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4 --args --no-sandbox --disable-setuid-sandbox
+              - cd testing && export DISPLAY=localhost:1.0 && export HEADLESS=true && python run_pgadmin4.py
           - if: osx and arm64
             then:
               - file ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4

@@ -129,6 +129,7 @@ _install_osx_bundle() {
     sed -i "s/%APPNAME%/${APP_NAME}/g" "${BUNDLEDIR}/Contents/Info.plist"
     sed -i "s/%APPVER%/${APP_LONG_VERSION}/g" "${BUNDLEDIR}/Contents/Info.plist"
     sed -i "s/%APPID%/org.pgadmin.pgadmin4/g" "${BUNDLEDIR}/Contents/Info.plist"
+    plutil -replace CFBundleName -string "pgAdmin 4" "${BUNDLEDIR}/Contents/Info.plist"
 
     # Rename helper execs and Update the plist
     for helper_exec in "Electron Helper" "Electron Helper (Renderer)" "Electron Helper (Plugin)" "Electron Helper (GPU)"
