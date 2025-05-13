@@ -148,6 +148,7 @@ tests:
               - ls -lrt ${PREFIX}/lib/libnss3.so
               - ls -lrt ${PREFIX}/lib/libnssutil3.so
               - ls -lrt $PREFIX/usr/pgadmin4/bin/pgadmin4
+              - patchelf --set-rpath "$PREFIX/lib" $PREFIX/usr/pgadmin4/bin/pgadmin4
               - readelf -h  $PREFIX/usr/pgadmin4/bin/pgadmin4
               - readelf -h  $PREFIX/lib/libnss3.so
               - readelf -h  $PREFIX/lib/libnssutil3.so
