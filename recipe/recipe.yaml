@@ -147,10 +147,10 @@ tests:
             then:
               - ls -lrt ${PREFIX}/lib/libnss3.so
               - ls -lrt ${PREFIX}/lib/libnssutil3.so
-              - ls -l $PREFIX/usr/pgadmin4/bin/pgadmin4
-              - file $PREFIX/usr/pgadmin4/bin/pgadmin4
-              - file $PREFIX/lib/libnss3.so
-              - file $PREFIX/lib/libnssutil3.so
+              - ls -lrt $PREFIX/usr/pgadmin4/bin/pgadmin4
+              - readelf -h  $PREFIX/usr/pgadmin4/bin/pgadmin4
+              - readelf -h  $PREFIX/lib/libnss3.so
+              - readelf -h  $PREFIX/lib/libnssutil3.so
               - readelf -d $PREFIX/lib/libnss3.so | grep -i rpath
               - readelf -d $PREFIX/lib/libnssutil3.so | grep -i rpath
               - ldd ${PREFIX}/usr/pgadmin4/bin/pgadmin4 | grep nss
