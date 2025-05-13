@@ -158,10 +158,9 @@ tests:
               - export LD_LIBRARY_PATH=${PREFIX}/lib:$LD_LIBRARY_PATH
               - LD_DEBUG=libs ${PREFIX}/usr/pgadmin4/bin/pgadmin4 || true
           - if: linux or (osx and x86_64)
-            then: cd testing && export DISPLAY=localhost:1.0 && export HEADLESS=true && python run_pgadmin4.py
+            then: cd testing && export HEADLESS=true && python run_pgadmin4.py
           - if: osx and arm64
             then:
-              - file ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
               - otool -hv ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
           - echo Done
         else: exit 0
