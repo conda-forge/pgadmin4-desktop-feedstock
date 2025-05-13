@@ -19,9 +19,9 @@ build:
   number: 1
   dynamic_linking:
     binary_relocation: ${{ false if osx else true }}
-  script:
-    env:
-      ELECTRON_VERSION: ${{ electron_version if aarch64 else "36.2.0" }}
+  # script:
+  #   env:
+  #     ELECTRON_VERSION: ${{ electron_version if aarch64 else "36.2.0" }}
 
 requirements:
   build:

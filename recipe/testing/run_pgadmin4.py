@@ -99,7 +99,7 @@ def run_pgadmin4(args):
         pgadmin4_executable = os.path.join(prefix, "usr/pgadmin4.app/Contents/MacOS/pgadmin4")
     elif os.name == "nt":
         # Windows-specific: Use the .exe file
-        pgadmin4_executable = os.path.join(prefix, "usr", "pgadmin4", "bin", "pgadmin4.exe")
+        pgadmin4_executable = os.path.join(prefix, "Library", "usr", "pgadmin4", "bin", "pgadmin4.exe")
     else:
         # Default executable path for Linux
         pgadmin4_executable = os.path.join(prefix, "usr/pgadmin4/bin/pgadmin4")

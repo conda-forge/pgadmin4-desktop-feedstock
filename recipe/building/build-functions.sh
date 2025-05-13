@@ -53,10 +53,10 @@ _install_electron() {
   echo "Installing Electron..."
   if [[ "${OSTYPE}" == "linux"* ]] || [[ "${OSTYPE}" == "darwin"* ]]; then
     ELECTRON_OS="$(uname | tr '[:upper:]' '[:lower:]')"
-    # ELECTRON_VERSION="$(pnpm info electron version)"
+    ELECTRON_VERSION="$(pnpm info electron version)"
   else
     ELECTRON_OS="win32"
-    # ELECTRON_VERSION="$(${BUILD_PREFIX}/Library/bin/pnpm.bat info electron version)"
+    ELECTRON_VERSION="$(${BUILD_PREFIX}/Library/bin/pnpm.bat info electron version)"
   fi
 
   ELECTRON_ARCH="x64"
