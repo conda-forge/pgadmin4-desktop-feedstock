@@ -165,18 +165,20 @@ def main():
                 timer.cancel()
                 logging.info("Test completed - pgAdmin4 started successfully")
                 cleanup(temp_dir, dbus_process)
+                time.sleep(5)
                 os._exit(0)
             time.sleep(1)
 
         logging.warning("Maximum wait time reached - exiting with success anyway")
         timer.cancel()
         cleanup(temp_dir, dbus_process)
-        sleep(5)
+        time.sleep(5)
         os._exit(0)
 
     except KeyboardInterrupt:
         logging.warning("Test interrupted by user")
         cleanup(temp_dir, dbus_process)
+        time.sleep(5)
         os._exit(0)
     except Exception as e:
         logging.error(f"Error: {e}")

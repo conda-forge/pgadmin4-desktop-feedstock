@@ -139,19 +139,24 @@ tests:
             - Library/Menu/pgadmin4.ico
             - Library/usr/pgadmin4/bin/pgadmin4.exe
   - script:
+      - echo Testing
       - if: unix
         then:
           - if: linux and ppc64le
             then:
               - find ${PREFIX} -name "libnss3.so"
               - ls -l ${PREFIX}/lib/libnss3.*
-              - nm -D ${PREFIX}/lib/libnss3.so | grep -v " U " | head -10
+              - nm -D ${PREFIX}/lib/libnss3.so | grep NEEDED
               - export LD_PRELOAD=${PREFIX}/lib/libnss3.so
           - if: linux
             then: cd testing && export DISPLAY=localhost:1.0 && python run_pgadmin4.py
           - if: osx and x86_64
             then:
               - find ${PREFIX}/usr/pgadmin4.app -name "pgAdmin 4 Helper*" -type f
+              - chmod +x ${PREFIX}/usr/pgadmin4.app/Contents/Frameworks/pgAdmin\ 4\ Helper*/Contents/MacOS/*
+              - file ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
+              - file ${PREFIX}/usr/pgadmin4.app/Contents/Frameworks/pgAdmin\ 4\ Helper.app/Contents/MacOS/*
+              - plutil -p ${PREFIX}/usr/pgadmin4.app/Contents/Info.plist | grep CFBundleName
               - ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
           - if: osx and arm64
             then:
