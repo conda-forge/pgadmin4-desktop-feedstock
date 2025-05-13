@@ -146,8 +146,13 @@ tests:
           - if: linux and ppc64le
             then:
               - ls -lrt ${PREFIX}/lib/libnss3.so
-              - find ${PREFIX}/lib/ -name "*util*.so*"
+              - ls -lrt ${PREFIX}/lib/libnssutil3.so
+              - ls -l $PREFIX/usr/pgadmin4/bin/pgadmin4
+              - file $PREFIX/usr/pgadmin4/bin/pgadmin4
+              - file $PREFIX/lib/libnss3.so
+              - file $PREFIX/lib/libnssutil3.so
               - readelf -d $PREFIX/lib/libnss3.so | grep -i rpath
+              - readelf -d $PREFIX/lib/libnssutil3.so | grep -i rpath
               - ldd ${PREFIX}/usr/pgadmin4/bin/pgadmin4 | grep nss
               - export LD_LIBRARY_PATH=${PREFIX}/lib:$LD_LIBRARY_PATH
               - LD_DEBUG=libs ${PREFIX}/usr/pgadmin4/bin/pgadmin4 || true

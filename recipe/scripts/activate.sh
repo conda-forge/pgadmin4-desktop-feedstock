@@ -9,6 +9,7 @@ export PGADMIN4_PY_HOME=`$CONDA_PREFIX/bin/python -c "import pgadmin4, os; print
 
 # Special app link for MacOS
 if [[ "$OSTYPE" == "darwin"* ]]; then
+  ls -lrt "$CONDA_PREFIX"/usr/pgadmin4.app/Contents/Resources/web
   ln -s "$PGADMIN4_PY_HOME" "$CONDA_PREFIX"/usr/pgadmin4.app/Contents/Resources/web
   ls -lrt "$CONDA_PREFIX"/usr/pgadmin4.app/Contents/Resources/web
 fi
