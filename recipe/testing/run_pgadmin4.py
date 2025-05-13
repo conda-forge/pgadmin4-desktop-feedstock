@@ -31,8 +31,11 @@ process = None
 
 def setup_environment():
     """Configure environment variables needed for pgAdmin4"""
-    # Use a shorter temporary directory path to avoid "Socket name too long" errors
-    temp_dir = tempfile.mkdtemp(prefix="pg4_", dir="/tmp")
+    # Use platform-specific temporary directory
+    if os.name == "nt":  # Windows
+        temp_dir = tempfile.mkdtemp(prefix="pg4_", dir=os.environ.get("TEMP", tempfile.gettempdir()))
+    else:  # macOS and Linux
+        temp_dir = tempfile.mkdtemp(prefix="pg4_", dir="/tmp")
     os.environ["XDG_RUNTIME_DIR"] = temp_dir
 
     # Configure fontconfig to prevent "Cannot load default config file" error
@@ -43,7 +46,12 @@ def setup_environment():
         logging.info("Skipping DBus setup on macOS")
         return temp_dir, None
 
-    # Start a DBus session and set DBUS_SESSION_BUS_ADDRESS
+    # Windows-specific: No DBus setup required
+    if os.name == "nt":
+        logging.info("Skipping DBus setup on Windows")
+        return temp_dir, None
+
+    # Start a DBus session and set DBUS_SESSION_BUS_ADDRESS (Linux only)
     dbus_socket_path = os.path.join(temp_dir, "dbus.sock")
     dbus_daemon_cmd = [
         "dbus-daemon",
