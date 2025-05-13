@@ -2,7 +2,7 @@ context:
   name: pgadmin4-desktop
   version: "9.3"
   yarn_version: "3.8.7"
-  electron_version: "35.3.0"
+  electron_version: "34.5.5"
 
 package:
   name: ${{ name|lower }}
@@ -21,7 +21,7 @@ build:
     binary_relocation: ${{ false if osx else true }}
   script:
     env:
-      ELECTRON_VERSION: ${{ electron_version }}
+      ELECTRON_VERSION: ${{ electron_version if aarch64 else "36.2.0" }}
 
 requirements:
   build:
