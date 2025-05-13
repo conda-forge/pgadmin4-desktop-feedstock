@@ -1,6 +1,7 @@
 if defined PGADMIN4_PY_HOME (
     set "_CONDA_SET_PGADMIN4_PY_HOME=%PGADMIN4_PY_HOME%"
     set "_CONDA_SET_PGADMIN4_PY_EXEC=%PGADMIN4_PY_EXEC%"
-fi
+)
+
 set "PGADMIN4_PY_EXEC=%CONDA_PREFIX%\Library\bin\python.exe"
 set "PGADMIN4_PY_HOME=%CONDA_PREFIX%\lib\site-packages\pgadmin4\pgAdmin4.py"

@@ -86,9 +86,6 @@ _install_electron() {
     ln -sf "${PREFIX}/lib/libvulkan.so" "${BUNDLEDIR}/libvulkan.so"
 
     mv "${BUNDLEDIR}/electron" "${BUNDLEDIR}/${APP_NAME}"
-    if [[ "${target_platform}" == "linux-ppc64le" ]]; then
-      patchelf --add-rpath "$PREFIX/lib" "${BUNDLEDIR}/${APP_NAME}"
-    fi
   elif [[ "${OSTYPE}" == "darwin"* ]]; then
     mv "${BUNDLEDIR}/Contents/MacOS/Electron" "${BUNDLEDIR}/Contents/MacOS/${APP_NAME}"
   else
@@ -160,6 +157,13 @@ _install_osx_bundle() {
 
     # Rename the app in package.json so the menu looks as it should
     sed -i "s/\"name\": \"pgadmin4\"/\"name\": \"${APP_NAME}\"/g" "${BUNDLEDIR}"/Contents/Resources/app/package.json
+
+    cat << EOF > "${BUNDLEDIR}/Contents/Resources/app/src/js/dev_config.json"
+{
+    "pythonPath": "__PGADMIN4_PY_EXEC__",
+    "pgadminFile": "__PGADMIN4_PY_HOME__"
+}
+EOF
 
     # Update permissions to make sure all users can access installed pgadmin
     chmod -R og=u "${BUNDLEDIR}"

@@ -20,6 +20,7 @@ source:
   #   target_directory: yarn-dist-${{ yarn_version }}
 
 build:
+  skip: ppc64le
   number: 1
   dynamic_linking:
     binary_relocation: ${{ false if osx else true }}
@@ -31,9 +32,6 @@ requirements:
     - curl
     - pnpm
     - yarn ==${{ yarn_version }}
-    - if: linux and ppc64le
-      then:
-        - patchelf
     - if: unix
       then:
         - sed
@@ -140,31 +138,18 @@ tests:
             - Library/Menu/pgadmin4.ico
             - Library/usr/pgadmin4/bin/pgadmin4.exe
   - script:
-      - echo Testing
       - if: unix
         then:
-          - if: linux and ppc64le
-            then:
-              - ls -lrt ${PREFIX}/lib/libnss3.so
-              - ls -lrt ${PREFIX}/lib/libnssutil3.so
-              - ls -lrt $PREFIX/usr/pgadmin4/bin/pgadmin4
-              - patchelf --set-rpath "$PREFIX/lib" $PREFIX/usr/pgadmin4/bin/pgadmin4
-              - readelf -h  $PREFIX/usr/pgadmin4/bin/pgadmin4
-              - readelf -h  $PREFIX/lib/libnss3.so
-              - readelf -h  $PREFIX/lib/libnssutil3.so
-              - readelf -d $PREFIX/lib/libnss3.so | grep -i rpath
-              - readelf -d $PREFIX/lib/libnssutil3.so | grep -i rpath
-              - ldd ${PREFIX}/usr/pgadmin4/bin/pgadmin4 | grep nss
-              - export LD_LIBRARY_PATH=${PREFIX}/lib:$LD_LIBRARY_PATH
-              - LD_DEBUG=libs ${PREFIX}/usr/pgadmin4/bin/pgadmin4 || true
           - if: linux or (osx and x86_64)
             then: cd testing && export HEADLESS=true && python run_pgadmin4.py
           - if: osx and arm64
             then:
               - otool -hv ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
-          - echo Done
-        else: exit 0
-        #   # then: %PREFIX%\Library\usr\pgadmin4\bin\pgadmin4.exe
+        else:
+          - cd testing
+          - set HEADLESS=true
+          - python run_pgadmin4.py
+          - %PREFIX%\Library\usr\pgadmin4\bin\pgadmin4.exe
     files:
       recipe:
         - testing/

@@ -17,5 +17,4 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     mv "$WEB_PATH" "$BACKUP_PATH"
   fi
   ln -s "$_PGADMIN4_PY_LIB" "$WEB_PATH"
-  ls -lrt "$WEB_PATH"/*
 fi
