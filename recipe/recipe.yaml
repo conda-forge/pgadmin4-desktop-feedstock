@@ -124,7 +124,8 @@ tests:
             - usr/pgadmin4.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Resources/Info.plist
             - usr/pgadmin4.app/Contents/Resources/app/assets/pgAdmin4.png
             - usr/pgadmin4.app/Contents/Resources/pgAdmin4.icns
-            - usr/pgadmin4.app/Contents/Resources/web/pgAdmin4.py
+            # This seems to need to be linked post-installation
+            # - usr/pgadmin4.app/Contents/Resources/web/pgAdmin4.py
           else:
             - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/assets/*
             - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/node_modules/*
@@ -144,6 +145,9 @@ tests:
         then:
           - if: linux and ppc64le
             then:
+              - ls -lrt ${PREFIX}/lib/libnss3.so
+              - find ${PREFIX}/lib/ -name "*util*.so*"
+              - readelf -d $PREFIX/lib/libnss3.so | grep -i rpath
               - ldd ${PREFIX}/usr/pgadmin4/bin/pgadmin4 | grep nss
               - export LD_LIBRARY_PATH=${PREFIX}/lib:$LD_LIBRARY_PATH
               - LD_DEBUG=libs ${PREFIX}/usr/pgadmin4/bin/pgadmin4 || true

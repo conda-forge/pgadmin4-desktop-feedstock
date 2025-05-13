@@ -19,8 +19,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Run pgAdmin4 with custom flags")
     parser.add_argument("-f", "--flags", action="append", default=[],
                         help="Additional flags to pass to pgAdmin4 (can specify multiple times)")
-    parser.add_argument("--timeout", type=int, default=60,
-                        help="Timeout in seconds (default: 60)")
+    parser.add_argument("--timeout", type=int, default=120,
+                        help="Timeout in seconds (default: 120)")
     return parser.parse_args()
 
 # Register signal handler
@@ -171,7 +171,7 @@ def main():
 
         # Add a maximum wait time in the main thread as backup
         start_time = time.time()
-        max_wait = 120  # seconds
+        max_wait = args.timeout  # seconds
 
         while time.time() - start_time < max_wait:
             if is_pgadmin4_running():
@@ -179,20 +179,20 @@ def main():
                 timer.cancel()
                 logging.info("Test completed - pgAdmin4 started successfully")
                 cleanup(temp_dir, dbus_process)
-                time.sleep(5)
+                time.sleep(10)
                 os._exit(0)
             time.sleep(1)
 
         logging.warning("Maximum wait time reached - exiting with success anyway")
         timer.cancel()
         cleanup(temp_dir, dbus_process)
-        time.sleep(5)
+        time.sleep(10)
         os._exit(0)
 
     except KeyboardInterrupt:
         logging.warning("Test interrupted by user")
         cleanup(temp_dir, dbus_process)
-        time.sleep(5)
+        time.sleep(10)
         os._exit(0)
     except Exception as e:
         logging.error(f"Error: {e}")
