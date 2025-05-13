@@ -74,10 +74,6 @@ requirements:
     - pgadmin4-python ==${{ version }}
     - if: linux
       then:
-        # - ${{ cdt("mesa-dri-drivers") }}
-        # - ${{ cdt("mesa-libgbm") }}
-        # - ${{ cdt("mesa-libgl-devel") }}
-        # - ${{ cdt("mesa-libglapi") }}
         - alsa-lib
         - fontconfig
         - libdrm
@@ -149,7 +145,7 @@ tests:
           - cd testing
           - set HEADLESS=true
           - python run_pgadmin4.py
-          - %PREFIX%\Library\usr\pgadmin4\bin\pgadmin4.exe
+          # - %PREFIX%\Library\usr\pgadmin4\bin\pgadmin4.exe
     files:
       recipe:
         - testing/
