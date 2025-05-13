@@ -84,8 +84,11 @@ _install_electron() {
     ln -sf "${PREFIX}/lib/libGLESv2.so.2" "${BUNDLEDIR}/libGLESv2.so"
     ln -sf "${PREFIX}/lib/libEGL.so.1" "${BUNDLEDIR}/libEGL.so"
     ln -sf "${PREFIX}/lib/libvulkan.so" "${BUNDLEDIR}/libvulkan.so"
-    # # PPC64LE doesn't seem to load libnss3.so at runtime
-    # ln -sf "${PREFIX}/lib/libnss3.so" "${BUNDLEDIR}/libnss3.so"
+    # PPC64LE doesn't seem to load libnss3.so at runtime
+    if [[ "${target_platform}" == "linux-ppc64le" ]]; then
+      ln -sf "${PREFIX}/lib/libnss3.so" "${BUNDLEDIR}/libnss3.so"
+      ln -sf "${PREFIX}/lib/libnssutil3.so" "${BUNDLEDIR}/libnss3.so"
+    fi
   fi
 
   if [[ "${OSTYPE}" == "linux"* ]]; then
@@ -151,16 +154,6 @@ _install_osx_bundle() {
       fi
     done
 
-    # # Rename Electron Framework to pgAdmin 4 Framework
-    # framework_path="${BUNDLEDIR}/Contents/Frameworks/Electron Framework.framework"
-    # if [[ -d "${framework_path}" ]]; then
-    #   mv "${framework_path}/Versions/Current/Electron Framework" "${framework_path}/Versions/Current/pgAdmin 4 Framework"
-    #   mv "${framework_path}/Electron Framework" "${framework_path}/pgAdmin 4 Framework"
-    #   mv "${framework_path}" "${BUNDLEDIR}/Contents/Frameworks/pgAdmin 4 Framework.framework"
-    # else
-    #   echo "Warning: Missing Electron Framework"
-    # fi
-
     # PkgInfo
     echo APPLPGA4 > "${BUNDLEDIR}"/Contents/PkgInfo
 
@@ -171,12 +164,6 @@ _install_osx_bundle() {
 
     # Rename the app in package.json so the menu looks as it should
     sed -i "s/\"name\": \"pgadmin4\"/\"name\": \"${APP_NAME}\"/g" "${BUNDLEDIR}"/Contents/Resources/app/package.json
-
-    # # Link the web directory to the bundle as it is required by runtime
-    # PY_PGADMIN=$(find "${PREFIX}"/lib/python3*/site-packages -type d -name "${APP_NAME}" | head -1)
-    # mkdir -p "${BUNDLEDIR}"/Contents/Resources/web
-    # ln -s "${PY_PGADMIN}/pgAdmin4.py" "${BUNDLEDIR}"/Contents/Resources/web
-    # cp -r "${PY_PGADMIN}" "${BUNDLEDIR}"/Contents/Resources/web
 
     # Update permissions to make sure all users can access installed pgadmin
     chmod -R og=u "${BUNDLEDIR}"
