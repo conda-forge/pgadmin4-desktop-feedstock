@@ -31,9 +31,9 @@ requirements:
     - curl
     - pnpm
     - yarn ==${{ yarn_version }}
-    - if: linux and (build_platform != target_platform)
+    - if: linux and ppc64le
       then:
-        - nss
+        - patchelf
     - if: unix
       then:
         - sed

@@ -12,6 +12,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   WEB_PATH="$CONDA_PREFIX/usr/pgadmin4.app/Contents/Resources/web"
   BACKUP_PATH="$CONDA_PREFIX/usr/pgadmin4.app/Contents/Resources/_conda_set_web"
   if [[ -e "$WEB_PATH" || -L "$WEB_PATH" ]]; then
+    rm -rf "$BACKUP_PATH"
     mv "$WEB_PATH" "$BACKUP_PATH"
   fi
   ln -s "$PGADMIN4_PY_HOME" "$WEB_PATH"

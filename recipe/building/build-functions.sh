@@ -86,8 +86,9 @@ _install_electron() {
     ln -sf "${PREFIX}/lib/libvulkan.so" "${BUNDLEDIR}/libvulkan.so"
     # PPC64LE doesn't seem to load libnss3.so at runtime
     if [[ "${target_platform}" == "linux-ppc64le" ]]; then
-      ln -sf "${PREFIX}/lib/libnss3.so" "${BUNDLEDIR}/libnss3.so"
-      ln -sf "${PREFIX}/lib/libnssutil3.so" "${BUNDLEDIR}/libnss3.so"
+      patchelf --add-rpath "$PREFIX/lib" $PREFIX/usr/pgadmin4/bin/pgadmin4
+      # ln -sf "${PREFIX}/lib/libnss3.so" "${BUNDLEDIR}/libnss3.so"
+      # ln -sf "${PREFIX}/lib/libnssutil3.so" "${BUNDLEDIR}/libnss3.so"
     fi
   fi
 
