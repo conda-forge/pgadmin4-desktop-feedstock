@@ -28,3 +28,5 @@ nss:
 - '3'
 pango:
 - '1'
+target_platform:
+- linux-aarch64
