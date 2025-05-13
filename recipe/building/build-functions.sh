@@ -84,8 +84,8 @@ _install_electron() {
     ln -sf "${PREFIX}/lib/libGLESv2.so.2" "${BUNDLEDIR}/libGLESv2.so"
     ln -sf "${PREFIX}/lib/libEGL.so.1" "${BUNDLEDIR}/libEGL.so"
     ln -sf "${PREFIX}/lib/libvulkan.so" "${BUNDLEDIR}/libvulkan.so"
-    # PPC64LE doesn't seem to load libnss3.so at runtime
-    ln -sf "${PREFIX}/lib/libnss3.so" "${BUNDLEDIR}/libnss3.so"
+    # # PPC64LE doesn't seem to load libnss3.so at runtime
+    # ln -sf "${PREFIX}/lib/libnss3.so" "${BUNDLEDIR}/libnss3.so"
   fi
 
   if [[ "${OSTYPE}" == "linux"* ]]; then

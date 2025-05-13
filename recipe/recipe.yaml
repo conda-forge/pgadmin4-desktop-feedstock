@@ -144,9 +144,7 @@ tests:
         then:
           - if: linux and ppc64le
             then:
-              - find ${PREFIX} -name "libnss3.so"
-              - ls -l ${PREFIX}/lib/libnss3.*
-              - nm -D ${PREFIX}/lib/libnss3.so | grep NEEDED
+              - nm -D ${PREFIX}/lib/libnss3.so
               - export LD_PRELOAD=${PREFIX}/lib/libnss3.so
           - if: linux
             then: cd testing && export DISPLAY=localhost:1.0 && python run_pgadmin4.py
@@ -157,6 +155,7 @@ tests:
               - file ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
               - file ${PREFIX}/usr/pgadmin4.app/Contents/Frameworks/pgAdmin\ 4\ Helper.app/Contents/MacOS/*
               - plutil -p ${PREFIX}/usr/pgadmin4.app/Contents/Info.plist | grep CFBundleName
+              - plutil -replace CFBundleName -string "pgAdmin 4" $PREFIX/usr/pgadmin4.app/Contents/Info.plist
               - ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
           - if: osx and arm64
             then:
