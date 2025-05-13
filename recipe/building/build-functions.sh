@@ -172,10 +172,10 @@ _install_osx_bundle() {
     # Rename the app in package.json so the menu looks as it should
     sed -i "s/\"name\": \"pgadmin4\"/\"name\": \"${APP_NAME}\"/g" "${BUNDLEDIR}"/Contents/Resources/app/package.json
 
-    # Link the web directory to the bundle as it is required by runtime
-    PY_PGADMIN=$(find "${PREFIX}"/lib/python3*/site-packages -type d -name "${APP_NAME}" | head -1)
-    mkdir -p "${BUNDLEDIR}"/Contents/Resources/web
-    ln -s "${PY_PGADMIN}/pgAdmin4.py" "${BUNDLEDIR}"/Contents/Resources/web
+    # # Link the web directory to the bundle as it is required by runtime
+    # PY_PGADMIN=$(find "${PREFIX}"/lib/python3*/site-packages -type d -name "${APP_NAME}" | head -1)
+    # mkdir -p "${BUNDLEDIR}"/Contents/Resources/web
+    # ln -s "${PY_PGADMIN}/pgAdmin4.py" "${BUNDLEDIR}"/Contents/Resources/web
     # cp -r "${PY_PGADMIN}" "${BUNDLEDIR}"/Contents/Resources/web
 
     # Update permissions to make sure all users can access installed pgadmin
