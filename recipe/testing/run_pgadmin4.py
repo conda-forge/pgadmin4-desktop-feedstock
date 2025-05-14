@@ -90,8 +90,42 @@ def cleanup(temp_dir, dbus_process):
     except Exception as e:
         logging.error(f"Failed to remove temporary directory: {e}")
 
+def verify_runtime_environment():
+    """Verify and log runtime environment details."""
+    try:
+        if os.name == "nt":
+            # Windows-specific: Log PATH environment variable
+            logging.info(f"Running on Windows. PATH: {os.environ.get('PATH', '(not set)')}")
+            # Optionally, check for required DLLs using a tool like Dependency Walker
+            logging.info("Note: Use tools like Dependency Walker to inspect DLL dependencies.")
+        else:
+            # Log the dynamic linker being used (Linux/macOS)
+            dynamic_linker = subprocess.check_output(["ldd", "--version"], universal_newlines=True).strip()
+            logging.info(f"Dynamic linker version: {dynamic_linker}")
+
+            # Log the libc version
+            libc_version = subprocess.check_output(["ldd", "--version"], universal_newlines=True).splitlines()[0]
+            logging.info(f"libc version: {libc_version}")
+
+            # Log the library paths
+            library_paths = os.environ.get("LD_LIBRARY_PATH", "(not set)")
+            logging.info(f"LD_LIBRARY_PATH: {library_paths}")
+
+            # Check if the required libc version is available
+            libc_path = os.path.join(os.environ.get("PREFIX", ""), "usr", "pgadmin4", "bin", "../../../aarch64-conda-linux-gnu/sysroot/lib/libc.so.6")
+            if os.path.exists(libc_path):
+                libc_info = subprocess.check_output([libc_path, "--version"], universal_newlines=True).strip()
+                logging.info(f"Found libc at {libc_path}: {libc_info}")
+            else:
+                logging.warning(f"libc not found at expected path: {libc_path}")
+    except Exception as e:
+        logging.error(f"Error verifying runtime environment: {e}")
+
 def run_pgadmin4(args):
     global process
+    # Verify runtime environment before starting pgAdmin4
+    verify_runtime_environment()
+
     # Start pgAdmin4 process
     prefix = os.environ.get("PREFIX", "")
     if os.name == "posix" and "darwin" in os.sys.platform.lower():
@@ -132,7 +166,8 @@ def run_pgadmin4(args):
         def log_output(stream, log_func):
             """Log output from a stream in real-time."""
             for line in iter(stream.readline, ""):
-                log_func(line.strip())
+                if os.name == "nt":
+                    log_func(line.strip())
             stream.close()
 
         # Log stdout and stderr in real-time

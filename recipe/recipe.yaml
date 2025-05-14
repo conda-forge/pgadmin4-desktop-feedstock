@@ -134,6 +134,8 @@ tests:
   - script:
       - if: unix
         then:
+          - if: linux or aarch64
+            then: export QEMU_LD_PREFIX=${PREFIX}/aarch64-conda-linux-gnu/sysroot
           - if: linux or (osx and x86_64)
             then: cd testing && export HEADLESS=true && python run_pgadmin4.py
           - if: osx and arm64
