@@ -90,41 +90,8 @@ def cleanup(temp_dir, dbus_process):
     except Exception as e:
         logging.error(f"Failed to remove temporary directory: {e}")
 
-def verify_runtime_environment():
-    """Verify and log runtime environment details."""
-    try:
-        if os.name == "nt":
-            # Windows-specific: Log PATH environment variable
-            logging.info(f"Running on Windows. PATH: {os.environ.get('PATH', '(not set)')}")
-            # Optionally, check for required DLLs using a tool like Dependency Walker
-            logging.info("Note: Use tools like Dependency Walker to inspect DLL dependencies.")
-        else:
-            # Log the dynamic linker being used (Linux/macOS)
-            dynamic_linker = subprocess.check_output(["ldd", "--version"], universal_newlines=True).strip()
-            logging.info(f"Dynamic linker version: {dynamic_linker}")
-
-            # Log the libc version
-            libc_version = subprocess.check_output(["ldd", "--version"], universal_newlines=True).splitlines()[0]
-            logging.info(f"libc version: {libc_version}")
-
-            # Log the library paths
-            library_paths = os.environ.get("LD_LIBRARY_PATH", "(not set)")
-            logging.info(f"LD_LIBRARY_PATH: {library_paths}")
-
-            # Check if the required libc version is available
-            libc_path = os.path.join(os.environ.get("PREFIX", ""), "usr", "pgadmin4", "bin", "../../../aarch64-conda-linux-gnu/sysroot/lib/libc.so.6")
-            if os.path.exists(libc_path):
-                libc_info = subprocess.check_output([libc_path, "--version"], universal_newlines=True).strip()
-                logging.info(f"Found libc at {libc_path}: {libc_info}")
-            else:
-                logging.warning(f"libc not found at expected path: {libc_path}")
-    except Exception as e:
-        logging.error(f"Error verifying runtime environment: {e}")
-
 def run_pgadmin4(args):
     global process
-    # Verify runtime environment before starting pgAdmin4
-    verify_runtime_environment()
 
     # Start pgAdmin4 process
     prefix = os.environ.get("PREFIX", "")
@@ -194,18 +161,19 @@ def run_pgadmin4(args):
             process.wait()
 
 def is_pgadmin4_running():
-    """Check if pgAdmin4.py process is running."""
+    """Check if pgAdmin4.py process is running and return the process if found."""
     for proc in psutil.process_iter(attrs=["cmdline", "pid", "name"]):
         try:
             cmdline = proc.info.get("cmdline")
             if cmdline is not None:
                 logging.debug(f"Checking process: {cmdline}")
-                if any(("pgAdmin4" in arg or "pgadmin4" in arg.lower()) for arg in cmdline):
+                # Look for pgAdmin4.py in the process command line
+                if any(("pgAdmin4.py" in arg) for arg in cmdline):
                     logging.info(f"pgAdmin4.py is running with PID: {proc.info['pid']}")
-                    return True
+                    return proc  # Return the actual process object
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
-    return False
+    return None
 
 def main():
     args = parse_args()
@@ -225,14 +193,24 @@ def main():
         max_wait = args.timeout  # seconds
 
         while time.time() - start_time < max_wait:
-            if is_pgadmin4_running():
+            pgadmin_process = is_pgadmin4_running()
+            if pgadmin_process:
                 logging.info("TEST: pgAdmin4 process detected as running")
-                timer.cancel()
-                logging.info("Test completed - pgAdmin4 started successfully")
-                cleanup(temp_dir, dbus_process)
-                time.sleep(10)
-                os._exit(0)
-            time.sleep(1)
+                # Terminate the pgAdmin4.py process
+                try:
+                    logging.info(f"Terminating pgAdmin4.py process with PID: {pgadmin_process.pid}")
+                    pgadmin_process.terminate()
+                    pgadmin_process.wait(timeout=5)
+                    logging.info("pgAdmin4.py process terminated successfully")
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired) as e:
+                    logging.error(f"Failed to terminate pgAdmin4.py process: {e}")
+
+            timer.cancel()
+            logging.info("Test completed - pgAdmin4 started successfully")
+            cleanup(temp_dir, dbus_process)
+            time.sleep(10)
+            os._exit(0)
+        time.sleep(1)
 
         logging.warning("Maximum wait time reached - exiting with success anyway")
         timer.cancel()
