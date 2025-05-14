@@ -109,8 +109,7 @@ def log_processes():
     current_cmds = set()
     for proc in psutil.process_iter(attrs=["cmdline"]):
         try:
-            cmdline = tuple(proc.info.get("cmdline") or [])
-            if cmdline:
+            if cmdline := tuple(proc.info.get("cmdline") or []):
                 current_cmds.add(cmdline)
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
@@ -142,7 +141,7 @@ def log_output(stream, log_func):
         log_func(line.strip())
     stream.close()
 
-def run_pgadmin4(args):
+def run_pgadmin4(args, stop_event=None):
     global process
 
     # Start pgAdmin4 process
@@ -180,9 +179,17 @@ def run_pgadmin4(args):
         stdout_thread.start()
         stderr_thread.start()
 
-        stdout_thread.join(timeout=args.timeout)
-        stderr_thread.join(timeout=args.timeout)
-        process.wait(timeout=args.timeout)
+        # Wait for process or stop_event
+        while True:
+            if stop_event and stop_event.is_set():
+                terminate_process(process, "pgAdmin4")
+                break
+            if process.poll() is not None:
+                break
+            time.sleep(0.2)
+
+        stdout_thread.join(timeout=5)
+        stderr_thread.join(timeout=5)
 
         if process.returncode == -15:
             logging.info(f"pgAdmin4 process terminated by SIGTERM (expected). Return code: {process.returncode}")
@@ -217,13 +224,13 @@ def is_pgadmin4_running():
             if os.name == "nt":
                 # On Windows, check for pgadmin4.exe or python.exe running pgAdmin4.py
                 if name == "pgadmin4.exe":
-                    logging.info(f"pgadmin4.exe is running with PID: {proc.info['pid']}")
+                    logging.info(f"pgadmin4.exe is running with PID: {proc.info['pid']} {cmdline}")
                     return proc
-                if name == "python.exe" and cmdline and any("pgAdmin4.py" in arg or "pgadmin4.py" in arg for arg in cmdline):
-                    logging.info(f"python.exe running pgAdmin4.py is running with PID: {proc.info['pid']}")
+                if name == "python.exe" and cmdline and any("pgAdmin4.py" in arg for arg in cmdline):
+                    logging.info(f"python.exe running pgAdmin4.py is running with PID: {proc.info['pid']} {cmdline}")
                     return proc
-            elif cmdline is not None and any("pgAdmin4.py" in arg or "pgadmin4.py" in arg for arg in cmdline):
-                logging.info(f"pgAdmin4.py is running with PID: {proc.info['pid']}")
+            elif cmdline is not None and any("pgAdmin4.py" in arg for arg in cmdline):
+                logging.info(f"pgAdmin4.py is running with PID: {proc.info['pid']} {cmdline}")
                 return proc
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
@@ -236,35 +243,64 @@ def main():
     timer = setup_timeout(args.timeout)
 
     temp_dir, dbus_process = setup_environment()
+    stop_event = threading.Event()
     try:
         # Start pgAdmin4 in a separate thread
-        pgadmin_thread = threading.Thread(target=run_pgadmin4, args=(args,))
+        pgadmin_thread = threading.Thread(target=run_pgadmin4, args=(args, stop_event))
         pgadmin_thread.daemon = True
         pgadmin_thread.start()
 
-        # Monitor the pgAdmin4 process
         pgadmin_process = monitor_pgadmin4_process(args.timeout)
         if pgadmin_process:
             try:
-                terminate_process(pgadmin_process, "pgAdmin4.py")
                 logging.info("Test completed - pgAdmin4 started successfully")
+                terminate_process(pgadmin_process, "python pgAdmin4.py")
+                if process and (not pgadmin_process or process.pid != pgadmin_process.pid):
+                    terminate_process(process, "pgAdmin4")
+                terminate_process(dbus_process, "DBus")
                 cleanup(temp_dir, dbus_process)
+                stop_event.set()
+                pgadmin_thread.join(timeout=10)
+                if pgadmin_thread.is_alive():
+                    logging.warning("pgAdmin4 thread still alive after cleanup.")
+                timer.cancel()
                 sys.exit(0)
             except Exception as e:
                 logging.error(f"Failed to terminate pgAdmin4.py process: {e}")
+                cleanup(temp_dir, dbus_process)
+                stop_event.set()
+                pgadmin_thread.join(timeout=5)
+                timer.cancel()
+                sys.exit(1)
         else:
             logging.warning("Maximum wait time reached - exiting with success anyway")
             timer.cancel()
+            terminate_process(process, "pgAdmin4")
+            terminate_process(dbus_process, "DBus")
             cleanup(temp_dir, dbus_process)
+            stop_event.set()
+            pgadmin_thread.join(timeout=10)
+            if pgadmin_thread.is_alive():
+                logging.warning("pgAdmin4 thread still alive after cleanup.")
             sys.exit(1)
 
     except KeyboardInterrupt:
         logging.warning("Test interrupted by user")
+        terminate_process(process, "pgAdmin4")
+        terminate_process(dbus_process, "DBus")
         cleanup(temp_dir, dbus_process)
+        stop_event.set()
+        pgadmin_thread.join(timeout=5)
+        timer.cancel()
         sys.exit(0)
     except Exception as e:
         logging.error(f"Error: {e}")
+        terminate_process(process, "pgAdmin4")
+        terminate_process(dbus_process, "DBus")
         cleanup(temp_dir, dbus_process)
+        stop_event.set()
+        pgadmin_thread.join(timeout=5)
+        timer.cancel()
         sys.exit(1)
 
 if __name__ == "__main__":
