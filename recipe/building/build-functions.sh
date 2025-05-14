@@ -177,18 +177,11 @@ _install_bundle() {
     _install_osx_bundle
   else
     PYTHON_BINARY=$(find "${PREFIX}/lib" -name pgAdmin4.py | grep -o "python[0-9]\.[0-9]*" | head -1)
-    if [[ "${OSTYPE}" == "linux"* ]]; then
-      RELATIVE_PYTHON_PATH="../../../../../../../bin/python"
-      RELATIVE_PGADMIN_FILE="../../../../../../../lib/${PYTHON_BINARY}/site-packages/${APP_NAME}/pgAdmin4.py"
-    else
-      RELATIVE_PYTHON_PATH="../../../../../../../Scripts/python.exe"
-      RELATIVE_PGADMIN_FILE="../../../../../../../Lib/site-packages/${APP_NAME}/pgAdmin4.py"
-    fi
     mkdir -p "${BUNDLEDIR}"/resources/app/src/js
     cat << EOF > "${BUNDLEDIR}/resources/app/src/js/dev_config.json"
 {
-    "pythonPath": "${RELATIVE_PYTHON_PATH}",
-    "pgadminFile": "${RELATIVE_PGADMIN_FILE}"
+    "pythonPath": "__PGADMIN4_PY_EXEC__",
+    "pgadminFile": "__PGADMIN4_PY_HOME__"
 }
 EOF
   fi

@@ -4,8 +4,8 @@ if [[ -n "$PGADMIN4_PY_HOME" ]]; then
   export _CONDA_SET_PGADMIN4_PY_EXEC="$PGADMIN4_PY_EXEC"
   export _CONDA_SET_PGADMIN4_PY_HOME="$PGADMIN4_PY_HOME"
 fi
-export PGADMIN4_PY_EXEC="$CONDA_PREFIX"/bin/python
 _PGADMIN4_PY_LIB=`$CONDA_PREFIX/bin/python -c "import pgadmin4, os; print(os.path.dirname(pgadmin4.__file__))" | tail -n 1`
+export PGADMIN4_PY_EXEC="$CONDA_PREFIX"/bin/python
 export PGADMIN4_PY_HOME="${_PGADMIN4_PY_LIB}/pgAdmin4.py"
 
 # Special app link for MacOS
