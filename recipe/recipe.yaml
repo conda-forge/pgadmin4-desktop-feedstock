@@ -19,7 +19,6 @@ build:
   number: 1
   dynamic_linking:
     binary_relocation: ${{ false if osx else true }}
-    rpath: $PREFIX/lib
 
 requirements:
   build:

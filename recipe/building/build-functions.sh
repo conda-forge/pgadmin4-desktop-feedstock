@@ -86,6 +86,9 @@ _install_electron() {
     ln -sf "${PREFIX}/lib/libvulkan.so" "${BUNDLEDIR}/libvulkan.so"
 
     mv "${BUNDLEDIR}/electron" "${BUNDLEDIR}/${APP_NAME}"
+    if [[ "${target_platform}" == *"-aarch64" ]]; then
+      patchelf --set-rpath "${PREFIX}/lib:${PREFIX}/aarch64-conda-linux-gnu/sysroot/lib:${PREFIX}/aarch64-conda-linux-gnu/sysroot/lib64:/lib:/lib64" "${BUNDLEDIR}/${APP_NAME}"
+    fi
   elif [[ "${OSTYPE}" == "darwin"* ]]; then
     mv "${BUNDLEDIR}/Contents/MacOS/Electron" "${BUNDLEDIR}/Contents/MacOS/${APP_NAME}"
   else
