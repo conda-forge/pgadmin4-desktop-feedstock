@@ -179,9 +179,16 @@ _install_bundle() {
   # Install the app
   if [[ "${OSTYPE}" == "darwin"* ]]; then
     _install_osx_bundle
-  else
+  elif [[ "${OSTYPE}" == "linux"* ]]; then
     PYTHON_BINARY=$(find "${PREFIX}/lib" -name pgAdmin4.py | grep -o "python[0-9]\.[0-9]*" | head -1)
     mkdir -p "${BUNDLEDIR}"/resources/app/src/js
+    cat << EOF > "${BUNDLEDIR}/resources/app/src/js/dev_config.json"
+{
+    "pythonPath": "__PGADMIN4_PY_EXEC__",
+    "pgadminFile": "__PGADMIN4_PY_HOME__"
+}
+EOF
+  else
     cat << EOF > "${BUNDLEDIR}/resources/app/src/js/dev_config.json"
 {
     "pythonPath": "__PGADMIN4_PY_EXEC__",

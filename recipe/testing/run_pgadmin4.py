@@ -193,30 +193,25 @@ def main():
         max_wait = args.timeout  # seconds
 
         while time.time() - start_time < max_wait:
-            pgadmin_process = is_pgadmin4_running()
-            if pgadmin_process:
+            if pgadmin_process := is_pgadmin4_running():
                 logging.info("TEST: pgAdmin4 process detected as running")
                 # Terminate the pgAdmin4.py process
                 try:
-                    logging.info(f"Terminating pgAdmin4.py process with PID: {pgadmin_process.pid}")
                     pgadmin_process.terminate()
                     pgadmin_process.wait(timeout=5)
-                    logging.info("pgAdmin4.py process terminated successfully")
+                    logging.info("Test completed - pgAdmin4 started successfully")
+                    cleanup(temp_dir, dbus_process)
+                    os._exit(0)
                 except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired) as e:
                     logging.error(f"Failed to terminate pgAdmin4.py process: {e}")
 
-            timer.cancel()
-            logging.info("Test completed - pgAdmin4 started successfully")
-            cleanup(temp_dir, dbus_process)
-            time.sleep(10)
-            os._exit(0)
-        time.sleep(1)
+            time.sleep(1)
 
         logging.warning("Maximum wait time reached - exiting with success anyway")
         timer.cancel()
         cleanup(temp_dir, dbus_process)
         time.sleep(10)
-        os._exit(0)
+        os._exit(1)
 
     except KeyboardInterrupt:
         logging.warning("Test interrupted by user")
