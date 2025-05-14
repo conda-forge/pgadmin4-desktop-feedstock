@@ -19,9 +19,6 @@ build:
   number: 1
   dynamic_linking:
     binary_relocation: ${{ false if osx else true }}
-  # script:
-  #   env:
-  #     ELECTRON_VERSION: ${{ electron_version if aarch64 else "36.2.0" }}
 
 requirements:
   build:
@@ -70,6 +67,9 @@ requirements:
   run:
     - libvulkan-loader
     - pgadmin4-python ==${{ version }}
+    - if: linux and aarch64
+      then:
+        - sysroot_linux-aarch64 >=2.28
     - if: linux
       then:
         - alsa-lib
@@ -148,9 +148,6 @@ tests:
         - testing/
     requirements:
       run:
-        - if: linux
-          then:
-            - ${{ cdt("xorg-x11-server-xvfb") }}
         - python
 
 about:
