@@ -236,16 +236,26 @@ def is_pgadmin4_running():
             continue
     return None
 
+def shutdown_and_exit(exit_code, temp_dir, dbus_process, stop_event, pgadmin_thread, timer=None):
+    """Unified cleanup and exit routine."""
+    cleanup(temp_dir, dbus_process)
+    stop_event.set()
+    if pgadmin_thread:
+        pgadmin_thread.join(timeout=10)
+        if pgadmin_thread.is_alive():
+            logging.warning("pgAdmin4 thread still alive after cleanup.")
+    if timer:
+        timer.cancel()
+    sys.exit(exit_code)
+
 def main():
     args = parse_args()
-
-    # Set a reasonable timeout
     timer = setup_timeout(args.timeout)
-
     temp_dir, dbus_process = setup_environment()
     stop_event = threading.Event()
+    pgadmin_thread = None
+
     try:
-        # Start pgAdmin4 in a separate thread
         pgadmin_thread = threading.Thread(target=run_pgadmin4, args=(args, stop_event))
         pgadmin_thread.daemon = True
         pgadmin_thread.start()
@@ -258,50 +268,26 @@ def main():
                 if process and (not pgadmin_process or process.pid != pgadmin_process.pid):
                     terminate_process(process, "pgAdmin4")
                 terminate_process(dbus_process, "DBus")
-                cleanup(temp_dir, dbus_process)
-                stop_event.set()
-                pgadmin_thread.join(timeout=10)
-                if pgadmin_thread.is_alive():
-                    logging.warning("pgAdmin4 thread still alive after cleanup.")
-                timer.cancel()
-                sys.exit(0)
+                shutdown_and_exit(0, temp_dir, dbus_process, stop_event, pgadmin_thread, timer)
             except Exception as e:
                 logging.error(f"Failed to terminate pgAdmin4.py process: {e}")
-                cleanup(temp_dir, dbus_process)
-                stop_event.set()
-                pgadmin_thread.join(timeout=5)
-                timer.cancel()
-                sys.exit(1)
+                shutdown_and_exit(1, temp_dir, dbus_process, stop_event, pgadmin_thread, timer)
         else:
             logging.warning("Maximum wait time reached - exiting with success anyway")
-            timer.cancel()
             terminate_process(process, "pgAdmin4")
             terminate_process(dbus_process, "DBus")
-            cleanup(temp_dir, dbus_process)
-            stop_event.set()
-            pgadmin_thread.join(timeout=10)
-            if pgadmin_thread.is_alive():
-                logging.warning("pgAdmin4 thread still alive after cleanup.")
-            sys.exit(1)
+            shutdown_and_exit(1, temp_dir, dbus_process, stop_event, pgadmin_thread, timer)
 
     except KeyboardInterrupt:
         logging.warning("Test interrupted by user")
         terminate_process(process, "pgAdmin4")
         terminate_process(dbus_process, "DBus")
-        cleanup(temp_dir, dbus_process)
-        stop_event.set()
-        pgadmin_thread.join(timeout=5)
-        timer.cancel()
-        sys.exit(0)
+        shutdown_and_exit(0, temp_dir, dbus_process, stop_event, pgadmin_thread, timer)
     except Exception as e:
         logging.error(f"Error: {e}")
         terminate_process(process, "pgAdmin4")
         terminate_process(dbus_process, "DBus")
-        cleanup(temp_dir, dbus_process)
-        stop_event.set()
-        pgadmin_thread.join(timeout=5)
-        timer.cancel()
-        sys.exit(1)
+        shutdown_and_exit(1, temp_dir, dbus_process, stop_event, pgadmin_thread, timer)
 
 if __name__ == "__main__":
     main()
