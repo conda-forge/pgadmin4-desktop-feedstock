@@ -65,23 +65,20 @@ def setup_environment():
 
     return temp_dir, dbus_process
 
+def terminate_process(proc, name):
+    """Terminate a process safely."""
+    try:
+        if proc and proc.poll() is None:
+            logging.info(f"Terminating {name} process...")
+            proc.terminate()
+            proc.wait()
+    except Exception as e:
+        logging.error(f"Failed to terminate {name} process: {e}")
+
 def cleanup(temp_dir, dbus_process):
     """Clean up temporary files and terminate processes."""
-    try:
-        if process and process.poll() is None:
-            logging.info("Terminating pgAdmin4 process...")
-            process.terminate()
-            process.wait()
-    except Exception as e:
-        logging.error(f"Failed to terminate pgAdmin4 process: {e}")
-
-    try:
-        if dbus_process and dbus_process.poll() is None:
-            logging.info("Terminating DBus process...")
-            dbus_process.terminate()
-            dbus_process.wait()
-    except Exception as e:
-        logging.error(f"Failed to terminate DBus process: {e}")
+    terminate_process(process, "pgAdmin4")
+    terminate_process(dbus_process, "DBus")
 
     try:
         if os.path.exists(temp_dir):
@@ -95,14 +92,38 @@ def log_environment_variables():
     logging.debug(f"Environment variables: {os.environ}")
 
 def log_processes():
-    """Log all running processes for debugging."""
-    for proc in psutil.process_iter(attrs=["cmdline", "pid", "name"]):
+    """Log only new or disappeared unique process command lines since the last check.
+    Print a '.' if nothing changed. Do not repeat unchanged lines."""
+    if not hasattr(log_processes, "last_seen_cmds"):
+        log_processes.last_seen_cmds = set()
+        log_processes.first_run = True
+    current_cmds = set()
+    for proc in psutil.process_iter(attrs=["cmdline"]):
         try:
-            cmdline = proc.info.get("cmdline")
+            cmdline = tuple(proc.info.get("cmdline") or [])
             if cmdline:
-                logging.debug(f"Checking process: {cmdline}")
+                current_cmds.add(cmdline)
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
+
+    # On first run, log all
+    if log_processes.first_run:
+        for cmdline in sorted(current_cmds):
+            logging.debug(f"Checking process: {list(cmdline)}")
+        log_processes.first_run = False
+    else:
+        # Log only new or disappeared command lines, print '.' if nothing changed
+        new_cmds = current_cmds - log_processes.last_seen_cmds
+        gone_cmds = log_processes.last_seen_cmds - current_cmds
+        if not new_cmds and not gone_cmds:
+            print('.', end='', flush=True)
+        else:
+            for cmdline in sorted(new_cmds):
+                logging.debug(f"New process: {list(cmdline)}")
+            for cmdline in sorted(gone_cmds):
+                logging.debug(f"Process ended: {list(cmdline)}")
+
+    log_processes.last_seen_cmds = current_cmds
 
 def monitor_pgadmin4_process(timeout):
     """Monitor the pgAdmin4 process and log its status."""
@@ -115,20 +136,18 @@ def monitor_pgadmin4_process(timeout):
         time.sleep(1)
     return None
 
+def log_output(stream, log_func):
+    """Log output from a stream in real-time."""
+    for line in iter(stream.readline, ""):
+        log_func(line.strip())
+    stream.close()
+
 def run_pgadmin4(args):
     global process
 
     # Start pgAdmin4 process
     prefix = os.environ.get("PREFIX", "")
-    if os.name == "posix" and "darwin" in os.sys.platform.lower():
-        # macOS-specific: Use the .app bundle
-        pgadmin4_executable = os.path.join(prefix, "usr/pgadmin4.app/Contents/MacOS/pgadmin4")
-    elif os.name == "nt":
-        # Windows-specific: Use the .exe file
-        pgadmin4_executable = os.path.join(prefix, "Library", "usr", "pgadmin4", "bin", "pgadmin4.exe")
-    else:
-        # Default executable path for Linux
-        pgadmin4_executable = os.path.join(prefix, "usr/pgadmin4/bin/pgadmin4")
+    pgadmin4_executable = get_pgadmin4_executable(prefix)
 
     if not os.path.exists(pgadmin4_executable):
         logging.error(f"pgAdmin4 executable not found at {pgadmin4_executable}")
@@ -155,13 +174,6 @@ def run_pgadmin4(args):
             bufsize=1
         )
 
-        def log_output(stream, log_func):
-            """Log output from a stream in real-time."""
-            for line in iter(stream.readline, ""):
-                if os.name == "nt":
-                    log_func(line.strip())
-            stream.close()
-
         # Log stdout and stderr in real-time
         stdout_thread = threading.Thread(target=log_output, args=(process.stdout, logging.info))
         stderr_thread = threading.Thread(target=log_output, args=(process.stderr, logging.error))
@@ -176,14 +188,23 @@ def run_pgadmin4(args):
             logging.error(f"pgAdmin4 process exited with an error. Return code: {process.returncode}")
     except subprocess.TimeoutExpired:
         logging.error("Process timed out!")
-        process.terminate()
-        process.wait()
+        terminate_process(process, "pgAdmin4")
     except Exception as e:
         logging.error(f"Unexpected error while running pgAdmin4: {e}")
     finally:
-        if process and process.poll() is None:
-            process.terminate()
-            process.wait()
+        terminate_process(process, "pgAdmin4")
+
+def get_pgadmin4_executable(prefix):
+    """Get the platform-specific pgAdmin4 executable path."""
+    if os.name == "posix" and "darwin" in os.sys.platform.lower():
+        # macOS-specific: Use the .app bundle
+        return os.path.join(prefix, "usr/pgadmin4.app/Contents/MacOS/pgadmin4")
+    elif os.name == "nt":
+        # Windows-specific: Use the .exe file
+        return os.path.join(prefix, "Library", "usr", "pgadmin4", "bin", "pgadmin4.exe")
+    else:
+        # Default executable path for Linux
+        return os.path.join(prefix, "usr/pgadmin4/bin/pgadmin4")
 
 def is_pgadmin4_running():
     """Check if pgAdmin4.py process is running and return the process if found."""
@@ -217,12 +238,11 @@ def main():
         pgadmin_process = monitor_pgadmin4_process(args.timeout)
         if pgadmin_process:
             try:
-                pgadmin_process.terminate()
-                pgadmin_process.wait(timeout=5)
+                terminate_process(pgadmin_process, "pgAdmin4.py")
                 logging.info("Test completed - pgAdmin4 started successfully")
                 cleanup(temp_dir, dbus_process)
                 os._exit(0)
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired) as e:
+            except Exception as e:
                 logging.error(f"Failed to terminate pgAdmin4.py process: {e}")
         else:
             logging.warning("Maximum wait time reached - exiting with success anyway")

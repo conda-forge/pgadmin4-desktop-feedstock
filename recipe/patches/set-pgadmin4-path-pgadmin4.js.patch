@@ -1,6 +1,6 @@
 --- runtime/src/js/pgadmin.js
 +++ runtime/src/js/pgadmin.js
-@@ -63,5 +63,8 @@
+@@ -63,5 +63,9 @@
 -if (fs.existsSync('dev_config.json')) {
 -  try {
 -    let dev_config = JSON.parse(fs.readFileSync('dev_config.json'));
@@ -12,5 +12,6 @@
 +    const configFileContent = fs.readFileSync(configFilePath, 'utf8'); // Specify encoding
 +    let dev_config = JSON.parse(configFileContent);
 +    const condaPrefix = path.normalize(process.env['CONDA_PREFIX']);
-+    pythonPath = path.resolve(normalizedPrefix, process.env['PGADMIN4_PY_EXEC']);
-+    pgadminFile = path.resolve(normalizedPrefix, process.env['PGADMIN4_PY_HOME']);
++    pythonPath = path.resolve(condaPrefix, process.env['PGADMIN4_PY_EXEC']);
++    pgadminFile = path.resolve(condaPrefix, process.env['PGADMIN4_PY_HOME']);
++    console.warn('PREFIX: ' + condaPrefix + '\nPGADMIN4_PY_EXEC: ' + process.env['PGADMIN4_PY_EXEC'] + '\nPGADMIN4_PY_HOME: ' + process.env['PGADMIN4_PY_HOME'] + '\npythonPath: ' + pythonPath + '\npgadminFile: ' + pgadminFile);
