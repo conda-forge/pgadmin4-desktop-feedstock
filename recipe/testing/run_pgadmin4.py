@@ -195,12 +195,12 @@ def run_pgadmin4(args):
 
 def is_pgadmin4_running():
     """Check if pgAdmin4.py process is running."""
-    for proc in psutil.process_iter(attrs=["cmdline", "pid"]):
+    for proc in psutil.process_iter(attrs=["cmdline", "pid", "name"]):
         try:
             cmdline = proc.info.get("cmdline")
             if cmdline is not None:
                 logging.debug(f"Checking process: {cmdline}")
-                if any("pgAdmin4.py" in arg for arg in cmdline):
+                if any(("pgAdmin4" in arg or "pgadmin4" in arg.lower()) for arg in cmdline):
                     logging.info(f"pgAdmin4.py is running with PID: {proc.info['pid']}")
                     return True
         except (psutil.NoSuchProcess, psutil.AccessDenied):
