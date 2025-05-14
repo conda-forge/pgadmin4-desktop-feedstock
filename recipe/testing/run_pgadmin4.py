@@ -68,10 +68,18 @@ def setup_environment():
 def terminate_process(proc, name):
     """Terminate a process safely."""
     try:
-        if proc and proc.poll() is None:
-            logging.info(f"Terminating {name} process...")
-            proc.terminate()
-            proc.wait()
+        # Support both psutil.Process and subprocess.Popen objects
+        if proc:
+            if hasattr(proc, "poll"):  # subprocess.Popen
+                if proc.poll() is None:
+                    logging.info(f"Terminating {name} process...")
+                    proc.terminate()
+                    proc.wait()
+            elif hasattr(proc, "is_running"):  # psutil.Process
+                if proc.is_running():
+                    logging.info(f"Terminating {name} process...")
+                    proc.terminate()
+                    proc.wait(timeout=5)
     except Exception as e:
         logging.error(f"Failed to terminate {name} process: {e}")
 
@@ -86,17 +94,17 @@ def cleanup(temp_dir, dbus_process):
             shutil.rmtree(temp_dir, ignore_errors=True)
     except Exception as e:
         logging.error(f"Failed to remove temporary directory: {e}")
+    time.sleep(10)
 
 def log_environment_variables():
     """Log environment variables for debugging."""
     logging.debug(f"Environment variables: {os.environ}")
 
 def log_processes():
-    """Log only new or disappeared unique process command lines since the last check.
+    """Log only new unique process command lines since the last check.
     Print a '.' if nothing changed. Do not repeat unchanged lines."""
     if not hasattr(log_processes, "last_seen_cmds"):
         log_processes.last_seen_cmds = set()
-        log_processes.first_run = True
     current_cmds = set()
     for proc in psutil.process_iter(attrs=["cmdline"]):
         try:
@@ -106,24 +114,15 @@ def log_processes():
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
 
-    # On first run, log all
-    if log_processes.first_run:
-        for cmdline in sorted(current_cmds):
-            logging.debug(f"Checking process: {list(cmdline)}")
-        log_processes.first_run = False
+    new_cmds = current_cmds - log_processes.last_seen_cmds
+    if not new_cmds:
+        print('.', end='', flush=True)
     else:
-        # Log only new or disappeared command lines, print '.' if nothing changed
-        new_cmds = current_cmds - log_processes.last_seen_cmds
-        gone_cmds = log_processes.last_seen_cmds - current_cmds
-        if not new_cmds and not gone_cmds:
-            print('.', end='', flush=True)
-        else:
-            for cmdline in sorted(new_cmds):
-                logging.debug(f"New process: {list(cmdline)}")
-            for cmdline in sorted(gone_cmds):
-                logging.debug(f"Process ended: {list(cmdline)}")
+        for cmdline in sorted(new_cmds):
+            logging.debug(f"New process: {list(cmdline)}")
 
-    log_processes.last_seen_cmds = current_cmds
+    log_processes.last_seen_cmds |= new_cmds
+
 
 def monitor_pgadmin4_process(timeout):
     """Monitor the pgAdmin4 process and log its status."""
@@ -184,7 +183,9 @@ def run_pgadmin4(args):
         stderr_thread.join(timeout=args.timeout)
         process.wait(timeout=args.timeout)
 
-        if process.returncode != 0:
+        if process.returncode == -15:
+            logging.info(f"pgAdmin4 process terminated by SIGTERM (expected). Return code: {process.returncode}")
+        elif process.returncode != 0:
             logging.error(f"pgAdmin4 process exited with an error. Return code: {process.returncode}")
     except subprocess.TimeoutExpired:
         logging.error("Process timed out!")
@@ -211,12 +212,9 @@ def is_pgadmin4_running():
     for proc in psutil.process_iter(attrs=["cmdline", "pid", "name"]):
         try:
             cmdline = proc.info.get("cmdline")
-            if cmdline is not None:
-                logging.debug(f"Checking process: {cmdline}")
-                # Look for pgAdmin4.py in the process command line
-                if any(("pgAdmin4.py" in arg) for arg in cmdline):
-                    logging.info(f"pgAdmin4.py is running with PID: {proc.info['pid']}")
-                    return proc  # Return the actual process object
+            if cmdline is not None and any(("pgAdmin4.py" in arg) for arg in cmdline):
+                logging.info(f"pgAdmin4.py is running with PID: {proc.info['pid']}")
+                return proc
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
     return None
