@@ -2,6 +2,7 @@ import argparse
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -150,7 +151,7 @@ def run_pgadmin4(args):
 
     if not os.path.exists(pgadmin4_executable):
         logging.error(f"pgAdmin4 executable not found at {pgadmin4_executable}")
-        os._exit(1)
+        sys.exit(1)
 
     # Add flags to disable GPU and sandbox explicitly
     cmd = [pgadmin4_executable, "--no-sandbox", "--disable-gpu", "--disable-software-rasterizer"]
@@ -248,23 +249,23 @@ def main():
                 terminate_process(pgadmin_process, "pgAdmin4.py")
                 logging.info("Test completed - pgAdmin4 started successfully")
                 cleanup(temp_dir, dbus_process)
-                os._exit(0)
+                sys.exit(0)
             except Exception as e:
                 logging.error(f"Failed to terminate pgAdmin4.py process: {e}")
         else:
             logging.warning("Maximum wait time reached - exiting with success anyway")
             timer.cancel()
             cleanup(temp_dir, dbus_process)
-            os._exit(1)
+            sys.exit(1)
 
     except KeyboardInterrupt:
         logging.warning("Test interrupted by user")
         cleanup(temp_dir, dbus_process)
-        os._exit(0)
+        sys.exit(0)
     except Exception as e:
         logging.error(f"Error: {e}")
         cleanup(temp_dir, dbus_process)
-        os._exit(1)
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
