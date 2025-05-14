@@ -90,6 +90,31 @@ def cleanup(temp_dir, dbus_process):
     except Exception as e:
         logging.error(f"Failed to remove temporary directory: {e}")
 
+def log_environment_variables():
+    """Log environment variables for debugging."""
+    logging.debug(f"Environment variables: {os.environ}")
+
+def log_processes():
+    """Log all running processes for debugging."""
+    for proc in psutil.process_iter(attrs=["cmdline", "pid", "name"]):
+        try:
+            cmdline = proc.info.get("cmdline")
+            if cmdline:
+                logging.debug(f"Checking process: {cmdline}")
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+
+def monitor_pgadmin4_process(timeout):
+    """Monitor the pgAdmin4 process and log its status."""
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        if pgadmin_process := is_pgadmin4_running():
+            logging.info("TEST: pgAdmin4 process detected as running")
+            return pgadmin_process
+        log_processes()
+        time.sleep(1)
+    return None
+
 def run_pgadmin4(args):
     global process
 
@@ -117,9 +142,9 @@ def run_pgadmin4(args):
     if os.environ.get("HEADLESS", "false").lower() == "true" and os.name != "nt" and "darwin" not in os.sys.platform.lower():
         cmd = ["xvfb-run", "--auto-servernum"] + cmd
 
-    # Log the full command being executed
+    # Log the full command and environment variables
     logging.info(f"Executing command: {' '.join(cmd)}")
-    logging.debug(f"Environment variables: {os.environ}")
+    log_environment_variables()
 
     try:
         process = subprocess.Popen(
@@ -188,35 +213,26 @@ def main():
         pgadmin_thread.daemon = True
         pgadmin_thread.start()
 
-        # Add a maximum wait time in the main thread as backup
-        start_time = time.time()
-        max_wait = args.timeout  # seconds
-
-        while time.time() - start_time < max_wait:
-            if pgadmin_process := is_pgadmin4_running():
-                logging.info("TEST: pgAdmin4 process detected as running")
-                # Terminate the pgAdmin4.py process
-                try:
-                    pgadmin_process.terminate()
-                    pgadmin_process.wait(timeout=5)
-                    logging.info("Test completed - pgAdmin4 started successfully")
-                    cleanup(temp_dir, dbus_process)
-                    os._exit(0)
-                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired) as e:
-                    logging.error(f"Failed to terminate pgAdmin4.py process: {e}")
-
-            time.sleep(1)
-
-        logging.warning("Maximum wait time reached - exiting with success anyway")
-        timer.cancel()
-        cleanup(temp_dir, dbus_process)
-        time.sleep(10)
-        os._exit(1)
+        # Monitor the pgAdmin4 process
+        pgadmin_process = monitor_pgadmin4_process(args.timeout)
+        if pgadmin_process:
+            try:
+                pgadmin_process.terminate()
+                pgadmin_process.wait(timeout=5)
+                logging.info("Test completed - pgAdmin4 started successfully")
+                cleanup(temp_dir, dbus_process)
+                os._exit(0)
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired) as e:
+                logging.error(f"Failed to terminate pgAdmin4.py process: {e}")
+        else:
+            logging.warning("Maximum wait time reached - exiting with success anyway")
+            timer.cancel()
+            cleanup(temp_dir, dbus_process)
+            os._exit(1)
 
     except KeyboardInterrupt:
         logging.warning("Test interrupted by user")
         cleanup(temp_dir, dbus_process)
-        time.sleep(10)
         os._exit(0)
     except Exception as e:
         logging.error(f"Error: {e}")
