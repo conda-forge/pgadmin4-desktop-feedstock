@@ -118,33 +118,35 @@ def run_pgadmin4(args):
 
     # Log the full command being executed
     logging.info(f"Executing command: {' '.join(cmd)}")
-
-    process = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        universal_newlines=True,
-        bufsize=1
-    )
-
-    def log_output(stream, log_func):
-        """Log output from a stream in real-time."""
-        for line in iter(stream.readline, ""):
-            log_func(line.strip())
-        stream.close()
-
-    # Log stdout and stderr in real-time
-    stdout_thread = threading.Thread(target=log_output, args=(process.stdout, logging.info))
-    stderr_thread = threading.Thread(target=log_output, args=(process.stderr, logging.error))
-    stdout_thread.start()
-    stderr_thread.start()
+    logging.debug(f"Environment variables: {os.environ}")
 
     try:
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            bufsize=1
+        )
+
+        def log_output(stream, log_func):
+            """Log output from a stream in real-time."""
+            for line in iter(stream.readline, ""):
+                log_func(line.strip())
+            stream.close()
+
+        # Log stdout and stderr in real-time
+        stdout_thread = threading.Thread(target=log_output, args=(process.stdout, logging.info))
+        stderr_thread = threading.Thread(target=log_output, args=(process.stderr, logging.error))
+        stdout_thread.start()
+        stderr_thread.start()
+
         stdout_thread.join(timeout=args.timeout)
         stderr_thread.join(timeout=args.timeout)
         process.wait(timeout=args.timeout)
+
         if process.returncode != 0:
-            logging.error("pgAdmin4 process exited with an error.")
+            logging.error(f"pgAdmin4 process exited with an error. Return code: {process.returncode}")
     except subprocess.TimeoutExpired:
         logging.error("Process timed out!")
         process.terminate()
@@ -161,8 +163,11 @@ def is_pgadmin4_running():
     for proc in psutil.process_iter(attrs=["cmdline", "pid"]):
         try:
             cmdline = proc.info.get("cmdline")
-            if cmdline is not None and any("pgAdmin4.py" in arg for arg in cmdline):
-                return True
+            if cmdline is not None:
+                logging.debug(f"Checking process: {cmdline}")
+                if any("pgAdmin4.py" in arg for arg in cmdline):
+                    logging.info(f"pgAdmin4.py is running with PID: {proc.info['pid']}")
+                    return True
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
     return False

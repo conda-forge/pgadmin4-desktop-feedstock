@@ -87,7 +87,8 @@ _install_electron() {
 
     mv "${BUNDLEDIR}/electron" "${BUNDLEDIR}/${APP_NAME}"
     if [[ "${target_platform}" == *"-aarch64" ]]; then
-      patchelf --set-rpath "\$ORIGIN/.:${PREFIX}/lib:${PREFIX}/aarch64-conda-linux-gnu/sysroot/lib:${PREFIX}/aarch64-conda-linux-gnu/sysroot/lib64:/lib:/lib64" "${BUNDLEDIR}/${APP_NAME}"
+      patchelf --add-rpath "${PREFIX}/lib" "${BUNDLEDIR}/${APP_NAME}"
+      patchelf --add-rpath "${PREFIX}/aarch64-conda-linux-gnu/sysroot/lib" "${BUNDLEDIR}/${APP_NAME}"
     fi
   elif [[ "${OSTYPE}" == "darwin"* ]]; then
     mv "${BUNDLEDIR}/Contents/MacOS/Electron" "${BUNDLEDIR}/Contents/MacOS/${APP_NAME}"
