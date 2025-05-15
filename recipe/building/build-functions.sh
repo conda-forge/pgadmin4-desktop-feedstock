@@ -22,8 +22,6 @@ _setup_env() {
       APP_LONG_VERSION="${APP_LONG_VERSION}-${APP_SUFFIX}"
   fi
 
-  PYTHON_BINARY=$("${PYTHON}" -c "import sys; print('python%d.%.d' % (sys.version_info.major, sys.version_info.minor))")
-
   SHAREROOT="${DESKTOPROOT}"/share/"${APP_NAME}"
   BUNDLEDIR="${DESKTOPROOT}"/usr/"${APP_NAME}"/bin
   if [[ "${OSTYPE}" == "darwin"* ]]; then
@@ -52,14 +50,13 @@ _setup_dirs() {
 }
 
 _install_electron() {
-  set +x
   echo "Installing Electron..."
   if [[ "${OSTYPE}" == "linux"* ]] || [[ "${OSTYPE}" == "darwin"* ]]; then
     ELECTRON_OS="$(uname | tr '[:upper:]' '[:lower:]')"
     ELECTRON_VERSION="$(pnpm info electron version)"
   else
     ELECTRON_OS="win32"
-    ELECTRON_VERSION="$(${PREFIX}/Library/bin/pnpm.bat info electron version)"
+    ELECTRON_VERSION="$(${BUILD_PREFIX}/Library/bin/pnpm.bat info electron version)"
   fi
 
   ELECTRON_ARCH="x64"
@@ -87,12 +84,13 @@ _install_electron() {
     ln -sf "${PREFIX}/lib/libGLESv2.so.2" "${BUNDLEDIR}/libGLESv2.so"
     ln -sf "${PREFIX}/lib/libEGL.so.1" "${BUNDLEDIR}/libEGL.so"
     ln -sf "${PREFIX}/lib/libvulkan.so" "${BUNDLEDIR}/libvulkan.so"
-  fi
 
-  if [[ "${OSTYPE}" == "linux"* ]]; then
     mv "${BUNDLEDIR}/electron" "${BUNDLEDIR}/${APP_NAME}"
+    if [[ "${target_platform}" == *"-aarch64" ]]; then
+      patchelf --add-rpath "${PREFIX}/lib" "${BUNDLEDIR}/${APP_NAME}"
+      patchelf --add-rpath "${PREFIX}/aarch64-conda-linux-gnu/sysroot/lib" "${BUNDLEDIR}/${APP_NAME}"
+    fi
   elif [[ "${OSTYPE}" == "darwin"* ]]; then
-    mkdir -p "${BUNDLEDIR}/Contents/MacOS"
     mv "${BUNDLEDIR}/Contents/MacOS/Electron" "${BUNDLEDIR}/Contents/MacOS/${APP_NAME}"
   else
     mv "${BUNDLEDIR}/electron.exe" "${BUNDLEDIR}/${APP_NAME}.exe"
@@ -131,20 +129,26 @@ _install_osx_bundle() {
     sed -i "s/%APPNAME%/${APP_NAME}/g" "${BUNDLEDIR}/Contents/Info.plist"
     sed -i "s/%APPVER%/${APP_LONG_VERSION}/g" "${BUNDLEDIR}/Contents/Info.plist"
     sed -i "s/%APPID%/org.pgadmin.pgadmin4/g" "${BUNDLEDIR}/Contents/Info.plist"
+    plutil -replace CFBundleName -string "pgAdmin 4" "${BUNDLEDIR}/Contents/Info.plist"
 
     # Rename helper execs and Update the plist
     for helper_exec in "Electron Helper" "Electron Helper (Renderer)" "Electron Helper (Plugin)" "Electron Helper (GPU)"
     do
       pgadmin_exec=${helper_exec//Electron/pgAdmin 4}
-      mv "${BUNDLEDIR}/Contents/Frameworks/${helper_exec}.app/Contents/MacOS/${helper_exec}" "${BUNDLEDIR}/Contents/Frameworks/${helper_exec}.app/Contents/MacOS/${pgadmin_exec}"
-      mv "${BUNDLEDIR}/Contents/Frameworks/${helper_exec}.app" "${BUNDLEDIR}/Contents/Frameworks/${pgadmin_exec}.app"
+      helper_path="${BUNDLEDIR}/Contents/Frameworks/${helper_exec}.app"
+      if [[ -d "${helper_path}" ]]; then
+        mv "${helper_path}/Contents/MacOS/${helper_exec}" "${helper_path}/Contents/MacOS/${pgadmin_exec}"
+        mv "${helper_path}" "${BUNDLEDIR}/Contents/Frameworks/${pgadmin_exec}.app"
 
-      mkdir -p "${BUNDLEDIR}/Contents/Frameworks/${pgadmin_exec}.app/Contents"
-      info_plist="${BUNDLEDIR}/Contents/Frameworks/${pgadmin_exec}.app/Contents/Info.plist"
-      cp Info.plist-helper.in "${info_plist}"
-      sed -i "s/%APPNAME%/${pgadmin_exec}/g" "${info_plist}"
-      sed -i "s/%APPVER%/${APP_LONG_VERSION}/g" "${info_plist}"
-      sed -i "s/%APPID%/org.pgadmin.pgadmin4.helper/g" "${info_plist}"
+        # Update the Info.plist for the helper app
+        info_plist="${BUNDLEDIR}/Contents/Frameworks/${pgadmin_exec}.app/Contents/Info.plist"
+        cp Info.plist-helper.in "${info_plist}"
+        sed -i "s/%APPNAME%/${pgadmin_exec}/g" "${info_plist}"
+        sed -i "s/%APPVER%/${APP_LONG_VERSION}/g" "${info_plist}"
+        sed -i "s/%APPID%/org.pgadmin.pgadmin4.helper/g" "${info_plist}"
+      else
+        echo "Warning: Missing helper app: ${helper_exec}"
+      fi
     done
 
     # PkgInfo
@@ -152,15 +156,20 @@ _install_osx_bundle() {
 
     # Icon
     cp pgAdmin4.icns "${BUNDLEDIR}"/Contents/Resources/app.icns
+    cp pgAdmin4.icns "${BUNDLEDIR}"/Contents/Resources/
+    rm -f "${BUNDLEDIR}"/Contents/Resources/electron.icns
 
     # Rename the app in package.json so the menu looks as it should
     sed -i "s/\"name\": \"pgadmin4\"/\"name\": \"${APP_NAME}\"/g" "${BUNDLEDIR}"/Contents/Resources/app/package.json
 
-    # copy the web directory to the bundle as it is required by runtime
-    PY_PGADMIN=$(find "${PREFIX}"/lib/python3*/site-packages -type d -name "${APP_NAME}")
-    ln -s "${PY_PGADMIN}" "${BUNDLEDIR}"/Contents/Resources/web
+    cat << EOF > "${BUNDLEDIR}/Contents/Resources/app/src/js/dev_config.json"
+{
+    "pythonPath": "__PGADMIN4_PY_EXEC__",
+    "pgadminFile": "__PGADMIN4_PY_HOME__"
+}
+EOF
 
-    # Update permissions to make sure all users can access installed pgadmin.
+    # Update permissions to make sure all users can access installed pgadmin
     chmod -R og=u "${BUNDLEDIR}"
     chmod -R og-w "${BUNDLEDIR}"
   popd || exit
@@ -170,15 +179,20 @@ _install_bundle() {
   # Install the app
   if [[ "${OSTYPE}" == "darwin"* ]]; then
     _install_osx_bundle
-  else
-    RELATIVE_PYTHON_PATH=$(python -c "import os; print(os.path.relpath('${PREFIX}/bin/python', '${PREFIX}/usr/${APP_NAME}/bin/resources/app/src/js'))")
-    RELATIVE_PGADMIN_FILE=$(python -c "import os; print(os.path.relpath('${PREFIX}/lib/${PYTHON_BINARY}/site-packages/${APP_NAME}/pgAdmin4.py', '${PREFIX}/usr/${APP_NAME}/bin/resources/app/src/js'))")
-
+  elif [[ "${OSTYPE}" == "linux"* ]]; then
+    PYTHON_BINARY=$(find "${PREFIX}/lib" -name pgAdmin4.py | grep -o "python[0-9]\.[0-9]*" | head -1)
     mkdir -p "${BUNDLEDIR}"/resources/app/src/js
     cat << EOF > "${BUNDLEDIR}/resources/app/src/js/dev_config.json"
 {
-    "pythonPath": "${RELATIVE_PYTHON_PATH}",
-    "pgadminFile": "${RELATIVE_PGADMIN_FILE}"
+    "pythonPath": "__PGADMIN4_PY_EXEC__",
+    "pgadminFile": "__PGADMIN4_PY_HOME__"
+}
+EOF
+  else
+    cat << EOF > "${BUNDLEDIR}/resources/app/src/js/dev_config.json"
+{
+    "pythonPath": "__PGADMIN4_PY_EXEC__",
+    "pgadminFile": "__PGADMIN4_PY_HOME__"
 }
 EOF
   fi

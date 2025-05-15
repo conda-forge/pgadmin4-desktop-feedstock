@@ -1,27 +1,22 @@
 context:
   name: pgadmin4-desktop
   version: "9.3"
-  python_min: "3.9"
   yarn_version: "3.8.7"
+  electron_version: "34.5.5"
 
 package:
   name: ${{ name|lower }}
   version: ${{ version }}
 
 source:
-    # sha256: 3b41fd0ec898d474c4166a6aa3fe545ece0e3d0faf99a2ede7393331e41fc125
   - url: https://ftp.postgresql.org/pub/pgadmin/pgadmin4/v${{ version }}/source/pgadmin4-${{ version }}.tar.gz
     sha256: fbeae20038e2bd256e2b9b3a83e65f87b87030ba1b64ba38a15f27ca3e63b681
     patches:
       - patches/set-pgadmin4-path-pgadmin4.js.patch
-  # # This is temporary until 3.8.7 is back-populated or pgadmin4 uses a updated version
-  # # in its package.json
-  # - url: https://registry.npmjs.org/@yarnpkg/cli-dist/-/cli-dist-${{ yarn_version }}.tgz
-  #   sha256: fc06b5df6ee5f43580f7b786cf4bdfcd6de4108827ba7cf85776608b3ab34207
-  #   target_directory: yarn-dist-${{ yarn_version }}
 
 build:
-  number: 0
+  skip: ppc64le
+  number: 1
   dynamic_linking:
     binary_relocation: ${{ false if osx else true }}
 
@@ -29,12 +24,17 @@ requirements:
   build:
     - ${{ compiler("c") }}
     - ${{ stdlib("c") }}
-  host:
     - curl
-    - libvulkan-loader
-    - pgadmin4-python ==${{ version }}
     - pnpm
     - yarn ==${{ yarn_version }}
+    - if: unix
+      then:
+        - sed
+        - syft
+        - unzip
+  host:
+    - libvulkan-loader
+    - pgadmin4-python ==${{ version }}
     - if: linux
       then:
         - ${{ cdt("mesa-libgbm") }}
@@ -54,9 +54,6 @@ requirements:
         - gtk3
         - mesalib
         - pango
-        - sed
-        - syft
-        - unzip
         - xorg-libx11
         - xorg-libxcomposite
         - xorg-libxext
@@ -70,12 +67,12 @@ requirements:
   run:
     - libvulkan-loader
     - pgadmin4-python ==${{ version }}
+    - if: linux and aarch64
+      then:
+        - sysroot_linux-aarch64 >=2.28
     - if: linux
       then:
-        # - ${{ cdt("mesa-dri-drivers") }}
-        # - ${{ cdt("mesa-libgbm") }}
-        # - ${{ cdt("mesa-libgl-devel") }}
-        # - ${{ cdt("mesa-libglapi") }}
+        - ${{ cdt("mesa-libgbm") }}
         - alsa-lib
         - fontconfig
         - libdrm
@@ -109,6 +106,19 @@ tests:
           then:
             - Menu/pgadmin4.icns
             - usr/pgadmin4.app/Contents/MacOS/pgadmin4
+            - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Helper (GPU).app/Contents/MacOS/pgAdmin 4 Helper (GPU)
+            - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Helper (Plugin).app/Contents/MacOS/pgAdmin 4 Helper (Plugin)
+            - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Helper (Renderer).app/Contents/MacOS/pgAdmin 4 Helper (Renderer)
+            - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Helper.app/Contents/MacOS/pgAdmin 4 Helper
+            - usr/pgadmin4.app/Contents/Frameworks/Electron Framework.framework/Electron Framework
+            - usr/pgadmin4.app/Contents/Frameworks/Electron Framework.framework/Resources/Info.plist
+            - usr/pgadmin4.app/Contents/Frameworks/Electron Framework.framework/Versions/A/Resources/Info.plist
+            - usr/pgadmin4.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Electron Framework
+            - usr/pgadmin4.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Resources/Info.plist
+            - usr/pgadmin4.app/Contents/Resources/app/assets/pgAdmin4.png
+            - usr/pgadmin4.app/Contents/Resources/pgAdmin4.icns
+            # This seems to need to be linked post-installation
+            # - usr/pgadmin4.app/Contents/Resources/web/pgAdmin4.py
           else:
             - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/assets/*
             - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/node_modules/*
@@ -123,22 +133,26 @@ tests:
             - Library/Menu/pgadmin4.ico
             - Library/usr/pgadmin4/bin/pgadmin4.exe
   - script:
-      - if: linux
+      - if: unix
         then:
-          - cd testing && export DISPLAY=localhost:0.0
-          - python run_pgadmin4.py -f=--disable-gpu
-          - python run_pgadmin4.py -f=--use-gl=egl
-          - python run_pgadmin4.py -f=--use-vulkan=none
-          - python run_pgadmin4.py -f=--use-gl=desktop
-          - python run_pgadmin4.py -f=--use-gl=swiftshader
-          # - exit 1
-        else: echo "No tests yet"
+          - if: linux or aarch64
+            then: export QEMU_LD_PREFIX=${PREFIX}/aarch64-conda-linux-gnu/sysroot
+          - if: linux or (osx and x86_64)
+            then: cd testing && export HEADLESS=true && python run_pgadmin4.py
+          - if: osx and arm64
+            then:
+              - otool -hv ${PREFIX}/usr/pgadmin4.app/Contents/MacOS/pgadmin4
+        else:
+          - cd testing
+          - set HEADLESS=true
+          -
+          - python run_pgadmin4.py
     files:
       recipe:
         - testing/
     requirements:
       run:
-        - ${{ cdt("xorg-x11-server-xvfb") }}
+        - python
 
 about:
   homepage: https://github.com/pgadmin-org/pgadmin4
