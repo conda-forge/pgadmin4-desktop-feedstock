@@ -106,6 +106,7 @@ tests:
           then:
             - Menu/pgadmin4.icns
             - usr/pgadmin4.app/Contents/MacOS/pgadmin4
+            - usr/pgadmin4.app/Contents/MacOS/pgadmin4-script
             - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Helper (GPU).app/Contents/MacOS/pgAdmin 4 Helper (GPU)
             - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Helper (Plugin).app/Contents/MacOS/pgAdmin 4 Helper (Plugin)
             - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Helper (Renderer).app/Contents/MacOS/pgAdmin 4 Helper (Renderer)
@@ -117,9 +118,6 @@ tests:
             - usr/pgadmin4.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Resources/Info.plist
             - usr/pgadmin4.app/Contents/Resources/app/assets/pgAdmin4.png
             - usr/pgadmin4.app/Contents/Resources/pgAdmin4.icns
-            # This seems to need to be linked post-installation
-            # - usr/pgadmin4.app/Contents/Resources/web/pgAdmin4.py
-            - Applications/pgadmin4.app/Contents/MacOS/pgadmin4
           else:
             - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/assets/*
             - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/node_modules/*
