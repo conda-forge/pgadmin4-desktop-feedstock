@@ -119,6 +119,7 @@ tests:
             - usr/pgadmin4.app/Contents/Resources/pgAdmin4.icns
             # This seems to need to be linked post-installation
             # - usr/pgadmin4.app/Contents/Resources/web/pgAdmin4.py
+            - Applications/pgadmin4.app/Contents/MacOS/pgadmin4
           else:
             - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/assets/*
             - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/node_modules/*
