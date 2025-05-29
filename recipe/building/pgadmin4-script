@@ -1,2 +1,2 @@
 #!/bin/sh
-pgadmin4
+pgadmin4 "$@"
