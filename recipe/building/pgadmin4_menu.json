@@ -12,20 +12,20 @@
     "platforms": {
       "win": {
         "command": [
-          "__PREFIX__\\Library\\usr\\__PGADMIN4__\\bin\\__PGADMIN4__.exe"
+          "{{ PREFIX }}\\Library\\usr\\__PGADMIN4__\\bin\\__PGADMIN4__.exe"
         ],
         "desktop": false
       },
       "linux": {
         "command": [
-            "__PREFIX__\\usr\\__PGADMIN4__\\bin\\__PGADMIN4__"
+            "{{ PREFIX }}\\usr\\__PGADMIN4__\\bin\\__PGADMIN4__"
         ],
         "Categories": [
           "database", "db","sql","query","administration","development"
         ]
       },
       "osx": {
-        "command": ["pgAdmin 4"],
+        "command": ["{{ PREFIX }}/usr/__PGADMIN4__.app/Contents/MacOS/__PGADMIN4__"],
         "CFBundleName": "pgAdmin 4 (__PKG_VERSION__)",
         "CFBundleDisplayName": "pgAdmin 4 (__PKG_VERSION__)",
         "CFBundleVersion": "__PKG_VERSION__"

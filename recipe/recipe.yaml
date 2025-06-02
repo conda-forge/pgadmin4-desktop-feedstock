@@ -106,7 +106,6 @@ tests:
           then:
             - Menu/pgadmin4.icns
             - usr/pgadmin4.app/Contents/MacOS/pgadmin4
-            - usr/pgadmin4.app/Contents/MacOS/pgadmin4-script
             - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Helper (GPU).app/Contents/MacOS/pgAdmin 4 Helper (GPU)
             - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Helper (Plugin).app/Contents/MacOS/pgAdmin 4 Helper (Plugin)
             - usr/pgadmin4.app/Contents/Frameworks/pgAdmin 4 Helper (Renderer).app/Contents/MacOS/pgAdmin 4 Helper (Renderer)

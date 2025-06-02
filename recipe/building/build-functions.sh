@@ -225,8 +225,6 @@ _install_icons_menu(){
     cp "${SRC_DIR}/pkg/linux/pgadmin4-128x128.png" "${MENUROOT}"/pgadmin4.png
   fi
   if [[ "${OSTYPE}" == "darwin"* ]]; then
-    cp "${RECIPE_DIR}"/building/pgadmin4-script "${BUNDLEDIR}"/Contents/MacOS/
-    chmod u+x "${BUNDLEDIR}"/Contents/MacOS/pgadmin4-script
     cp "${SRC_DIR}/pkg/mac/pgadmin4.icns" "${MENUROOT}"/pgadmin4.icns
   else
     cp "${SRC_DIR}/pkg/win32/Resources/pgAdmin4.ico" "${MENUROOT}"/pgadmin4.ico
