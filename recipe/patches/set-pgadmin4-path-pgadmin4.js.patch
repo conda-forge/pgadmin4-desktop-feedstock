@@ -1,6 +1,7 @@
 --- runtime/src/js/pgadmin.js
 +++ runtime/src/js/pgadmin.js
-@@ -63,5 +63,9 @@
+@@ -62,7 +62,11 @@
+ // Override the paths above, if a developer needs to
 -if (fs.existsSync('dev_config.json')) {
 -  try {
 -    let dev_config = JSON.parse(fs.readFileSync('dev_config.json'));
@@ -15,3 +16,4 @@
 +    pythonPath = path.resolve(condaPrefix, process.env['PGADMIN4_PY_EXEC']);
 +    pgadminFile = path.resolve(condaPrefix, process.env['PGADMIN4_PY_HOME']);
 +    console.warn('PREFIX: ' + condaPrefix + '\nPGADMIN4_PY_EXEC: ' + process.env['PGADMIN4_PY_EXEC'] + '\nPGADMIN4_PY_HOME: ' + process.env['PGADMIN4_PY_HOME'] + '\npythonPath: ' + pythonPath + '\npgadminFile: ' + pgadminFile);
+   } catch (error) {

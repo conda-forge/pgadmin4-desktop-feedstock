@@ -117,8 +117,6 @@ tests:
             - usr/pgadmin4.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Resources/Info.plist
             - usr/pgadmin4.app/Contents/Resources/app/assets/pgAdmin4.png
             - usr/pgadmin4.app/Contents/Resources/pgAdmin4.icns
-            # This seems to need to be linked post-installation
-            # - usr/pgadmin4.app/Contents/Resources/web/pgAdmin4.py
           else:
             - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/assets/*
             - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/node_modules/*
