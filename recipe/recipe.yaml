@@ -143,7 +143,6 @@ tests:
         else:
           - cd testing
           - set HEADLESS=true
-          - 
           - python run_pgadmin4.py
     files:
       recipe:
