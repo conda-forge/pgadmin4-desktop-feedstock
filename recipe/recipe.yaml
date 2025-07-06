@@ -95,13 +95,20 @@ requirements:
 tests:
   - package_contents:
       files:
-        - ${{ "Library/" if not unix else "" }}share/icons/hicolor/128x128/apps/pgadmin4.png
-        - ${{ "Library/" if not unix else "" }}share/icons/hicolor/16x16/apps/pgadmin4.png
-        - ${{ "Library/" if not unix else "" }}share/icons/hicolor/32x32/apps/pgadmin4.png
-        - ${{ "Library/" if not unix else "" }}share/icons/hicolor/48x48/apps/pgadmin4.png
-        - ${{ "Library/" if not unix else "" }}share/icons/hicolor/64x64/apps/pgadmin4.png
+        # - ${{ "Library/" if not unix else "" }}share/icons/hicolor/128x128/apps/pgadmin4.png
+        # - ${{ "Library/" if not unix else "" }}share/icons/hicolor/16x16/apps/pgadmin4.png
+        # - ${{ "Library/" if not unix else "" }}share/icons/hicolor/32x32/apps/pgadmin4.png
+        # - ${{ "Library/" if not unix else "" }}share/icons/hicolor/48x48/apps/pgadmin4.png
+        # - ${{ "Library/" if not unix else "" }}share/icons/hicolor/64x64/apps/pgadmin4.png
 
-        - ${{ "Library/" if not unix else "" }}Menu/pgadmin4_menu.json
+        # - ${{ "Library/" if not unix else "" }}Menu/pgadmin4_menu.json
+        - share/icons/hicolor/128x128/apps/pgadmin4.png
+        - share/icons/hicolor/16x16/apps/pgadmin4.png
+        - share/icons/hicolor/32x32/apps/pgadmin4.png
+        - share/icons/hicolor/48x48/apps/pgadmin4.png
+        - share/icons/hicolor/64x64/apps/pgadmin4.png
+
+        - Menu/pgadmin4_menu.json
         - if: osx
           then:
             - Menu/pgadmin4.icns
@@ -118,10 +125,14 @@ tests:
             - usr/pgadmin4.app/Contents/Resources/app/assets/pgAdmin4.png
             - usr/pgadmin4.app/Contents/Resources/pgAdmin4.icns
           else:
-            - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/assets/*
-            - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/node_modules/*
-            - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/package.json
-            - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/src/*
+            # - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/assets/*
+            # - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/node_modules/*
+            # - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/package.json
+            # - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/src/*
+            - usr/pgadmin4/bin/resources/app/assets/*
+            - usr/pgadmin4/bin/resources/app/node_modules/*
+            - usr/pgadmin4/bin/resources/app/package.json
+            - usr/pgadmin4/bin/resources/app/src/*
         - if: linux
           then:
             - Menu/pgadmin4.png
@@ -129,7 +140,7 @@ tests:
         - if: not unix
           then:
             - Menu/pgadmin4.ico
-            - Library/usr/pgadmin4/bin/pgadmin4.exe
+            - usr/pgadmin4/bin/pgadmin4.exe
   - script:
       - if: unix
         then:
