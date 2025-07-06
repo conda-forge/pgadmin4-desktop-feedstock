@@ -128,7 +128,7 @@ tests:
             - usr/pgadmin4/bin/pgadmin4
         - if: not unix
           then:
-            - Library/Menu/pgadmin4.ico
+            - Menu/pgadmin4.ico
             - Library/usr/pgadmin4/bin/pgadmin4.exe
   - script:
       - if: unix
