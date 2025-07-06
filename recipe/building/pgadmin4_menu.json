@@ -12,7 +12,7 @@
     "platforms": {
       "win": {
         "command": [
-          "{{ PREFIX }}\\Library\\usr\\__PGADMIN4__\\bin\\__PGADMIN4__.exe"
+          "{{ PREFIX }}\\usr\\__PGADMIN4__\\bin\\__PGADMIN4__.exe"
         ],
         "desktop": false
       },
