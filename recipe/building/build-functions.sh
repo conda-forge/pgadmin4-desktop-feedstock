@@ -198,11 +198,8 @@ EOF
   fi
 
   pushd "${DESKTOPROOT}" || exit 1
-    if [[ "${OSTYPE}" == "linux"* ]] || [[ "${OSTYPE}" == "darwin"* ]]; then
-      tar cf - ./* | (cd "${PREFIX}" || exit; tar xf -)
-    else
-      tar cf - ./* | (cd "${PREFIX}/Library" || exit; tar xf -)
-    fi
+    # Issue#4: Place Menu under ${PREFIX} for non-unix as well
+    tar cf - ./* | (cd "${PREFIX}" || exit; tar xf -)
   popd || exit 1
 }
 

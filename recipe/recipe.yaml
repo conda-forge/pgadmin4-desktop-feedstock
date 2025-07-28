@@ -1,6 +1,6 @@
 context:
   name: pgadmin4-desktop
-  version: "9.4"
+  version: "9.5"
   yarn_version: "3.8.7"
   electron_version: "34.5.5"
 
@@ -10,7 +10,7 @@ package:
 
 source:
   - url: https://ftp.postgresql.org/pub/pgadmin/pgadmin4/v${{ version }}/source/pgadmin4-${{ version }}.tar.gz
-    sha256: 8aa585aa1985afae141b6ee97b3bd9ce5debccb4f64cb2835ee3d65c2b8be8be
+    sha256: 00cd26a2a4964a8a69961b89f9fecd6a1a7afcd6aa7bb878b722f094c950bf07
     patches:
       - patches/set-pgadmin4-path-pgadmin4.js.patch
 
@@ -95,13 +95,13 @@ requirements:
 tests:
   - package_contents:
       files:
-        - ${{ "Library/" if not unix else "" }}share/icons/hicolor/128x128/apps/pgadmin4.png
-        - ${{ "Library/" if not unix else "" }}share/icons/hicolor/16x16/apps/pgadmin4.png
-        - ${{ "Library/" if not unix else "" }}share/icons/hicolor/32x32/apps/pgadmin4.png
-        - ${{ "Library/" if not unix else "" }}share/icons/hicolor/48x48/apps/pgadmin4.png
-        - ${{ "Library/" if not unix else "" }}share/icons/hicolor/64x64/apps/pgadmin4.png
+        - share/icons/hicolor/128x128/apps/pgadmin4.png
+        - share/icons/hicolor/16x16/apps/pgadmin4.png
+        - share/icons/hicolor/32x32/apps/pgadmin4.png
+        - share/icons/hicolor/48x48/apps/pgadmin4.png
+        - share/icons/hicolor/64x64/apps/pgadmin4.png
 
-        - ${{ "Library/" if not unix else "" }}Menu/pgadmin4_menu.json
+        - Menu/pgadmin4_menu.json
         - if: osx
           then:
             - Menu/pgadmin4.icns
@@ -118,18 +118,18 @@ tests:
             - usr/pgadmin4.app/Contents/Resources/app/assets/pgAdmin4.png
             - usr/pgadmin4.app/Contents/Resources/pgAdmin4.icns
           else:
-            - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/assets/*
-            - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/node_modules/*
-            - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/package.json
-            - ${{ "Library/" if not unix else "" }}usr/pgadmin4/bin/resources/app/src/*
+            - usr/pgadmin4/bin/resources/app/assets/*
+            - usr/pgadmin4/bin/resources/app/node_modules/*
+            - usr/pgadmin4/bin/resources/app/package.json
+            - usr/pgadmin4/bin/resources/app/src/*
         - if: linux
           then:
             - Menu/pgadmin4.png
             - usr/pgadmin4/bin/pgadmin4
         - if: not unix
           then:
-            - Library/Menu/pgadmin4.ico
-            - Library/usr/pgadmin4/bin/pgadmin4.exe
+            - Menu/pgadmin4.ico
+            - usr/pgadmin4/bin/pgadmin4.exe
   - script:
       - if: unix
         then:
