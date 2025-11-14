@@ -2,7 +2,7 @@ context:
   name: pgadmin4-desktop
   version: "9.10"
   yarn_version: "3.8.7"
-  electron_version: "34.5.5"
+  electron_version: "39.0.0"
 
 package:
   name: ${{ name|lower }}
