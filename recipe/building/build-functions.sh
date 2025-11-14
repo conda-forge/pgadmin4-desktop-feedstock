@@ -81,15 +81,18 @@ _install_electron() {
 
   if [[ "${OSTYPE}" == "linux"* ]]; then
     # Remove Electron's bundled graphics libraries and use conda's versions
-    rm -f "${BUNDLEDIR}"/lib{vulkan,EGL,GLESv2,gallium,gbm,GLX,glapi}*.so*
-    ln -sf "${PREFIX}"/lib/libGLESv2.so* "${BUNDLEDIR}"
-    ln -sf "${PREFIX}"/lib/libEGL.so* "${BUNDLEDIR}"
-    ln -sf "${PREFIX}"/lib/libvulkan.so* "${BUNDLEDIR}"
-    ln -sf "${PREFIX}"/lib/libgallium.so* "${BUNDLEDIR}"
-    ln -sf "${PREFIX}"/lib/libgbm.so* "${BUNDLEDIR}"
-    ln -sf "${PREFIX}"/lib/libGLX.so* "${BUNDLEDIR}"
-    ln -sf "${PREFIX}"/lib/libglapi.so* "${BUNDLEDIR}"
-
+    ls -1 "${BUNDLEDIR}"/lib*.so*
+    # $SRC_DIR/desktop/usr/pgadmin4/bin/libEGL.so
+    # $SRC_DIR/desktop/usr/pgadmin4/bin/libffmpeg.so
+    # $SRC_DIR/desktop/usr/pgadmin4/bin/libGLESv2.so
+    # $SRC_DIR/desktop/usr/pgadmin4/bin/libvk_swiftshader.so
+    # $SRC_DIR/desktop/usr/pgadmin4/bin/libvulkan.so.1
+    rm -f "${BUNDLEDIR}"/lib{vulkan,EGL,GLESv2}*.so*
+    
+    cp "${PREFIX}"/lib/libEGL.so* "${BUNDLEDIR}"
+    cp "${PREFIX}"/lib/libGLESv2.so* "${BUNDLEDIR}" && ln -sf "${BUNDLEDIR}"/libGLESv2.so.2 "${BUNDLEDIR}"/libGLESv2.so
+    cp "${PREFIX}"/lib/libvulkan.so* "${BUNDLEDIR}"
+    
     mv "${BUNDLEDIR}/electron" "${BUNDLEDIR}/${APP_NAME}"
     if [[ "${target_platform}" == *"-aarch64" ]]; then
       patchelf --add-rpath "${PREFIX}/lib" "${BUNDLEDIR}/${APP_NAME}"
