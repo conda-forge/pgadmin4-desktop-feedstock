@@ -1,8 +1,8 @@
 context:
   name: pgadmin4-desktop
-  version: "9.9"
+  version: "9.10"
   yarn_version: "3.8.7"
-  electron_version: "34.5.5"
+  electron_version: "39.0.0"
 
 package:
   name: ${{ name|lower }}
@@ -10,7 +10,7 @@ package:
 
 source:
   - url: https://ftp.postgresql.org/pub/pgadmin/pgadmin4/v${{ version }}/source/pgadmin4-${{ version }}.tar.gz
-    sha256: 108e16272f82a87eb6483f401f54e46326da8c48e014ab2dd742640dc6f995f2
+    sha256: 479b7b34b25be53b28174d3b688cebf91869204bec75752e06f7de1634c41507
     patches:
       - patches/set-pgadmin4-path-pgadmin4.js.patch
 
@@ -133,7 +133,7 @@ tests:
   - script:
       - if: unix
         then:
-          - if: linux or aarch64
+          - if: linux and aarch64
             then: export QEMU_LD_PREFIX=${PREFIX}/aarch64-conda-linux-gnu/sysroot
           - if: linux or (osx and x86_64)
             then: cd testing && export HEADLESS=true && python run_pgadmin4.py
