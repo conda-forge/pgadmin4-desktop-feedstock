@@ -1,6 +1,6 @@
 context:
   name: pgadmin4-desktop
-  version: "9.11"
+  version: "9.12"
   yarn_version: "3.8.7"
   electron_version: "39.0.0"
 
@@ -10,7 +10,7 @@ package:
 
 source:
   - url: https://ftp.postgresql.org/pub/pgadmin/pgadmin4/v${{ version }}/source/pgadmin4-${{ version }}.tar.gz
-    sha256: 8f394156662843440b86a5c73995e14b366d8b0056f69c2aa0b00a3268570a54
+    sha256: f72f5d688eed9f65d523046492ce868bcb4251c04f763cb6b834b13be0ad6744
     patches:
       - patches/set-pgadmin4-path-pgadmin4.js.patch
 
