@@ -3,4 +3,3 @@ mesa-libgbm
 mesa-libglapi
 mesa-libGL
 mesa-libGL-devel
-xorg-x11-server-Xvfb
