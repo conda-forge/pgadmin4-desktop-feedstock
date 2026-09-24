@@ -1,8 +1,8 @@
 context:
   name: pgadmin4-desktop
   version: "9.18"
-  yarn_version: "3.8.7"
-  electron_version: "39.0.0"
+  yarn_version: "4.15.0"
+  electron_version: "43.4.0"
 
 package:
   name: ${{ name|lower }}
