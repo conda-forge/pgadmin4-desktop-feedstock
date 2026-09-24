@@ -123,7 +123,6 @@ _build_runtime() {
   cp "${SRC_DIR}/runtime/package.json" "${_DEST}"
   cp "${SRC_DIR}/runtime/.yarnrc.yml" "${_DEST}"
   pushd "${_DEST}" > /dev/null || exit
-    ${PG_YARN} plugin import workspace-tools
     ${PG_YARN} workspaces focus --production > /dev/null 2>&1
     rm -rf .yarn .yarn*
   popd > /dev/null || exit
